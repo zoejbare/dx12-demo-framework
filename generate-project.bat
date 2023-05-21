@@ -19,9 +19,9 @@ pushd %~dp0
 
 set ENV_DIR=_env
 set PROJ_DIR=_project
-set TMP_DIR=_tmp
+set LOG_DIR=_log
 set LOCAL_PYTHON=%ENV_DIR%\Scripts\python.exe
-set GEN_PROJ_LOG_FILE=%TMP_DIR%\generate-projects.log
+set GEN_PROJ_LOG_FILE=%LOG_DIR%\generate-projects.log
 
 :: Verify the local build environment has been setup.
 if not exist "%LOCAL_PYTHON%" (
@@ -31,7 +31,7 @@ if not exist "%LOCAL_PYTHON%" (
 :: Generate the project files
 echo Generating project files ...
 "%LOCAL_PYTHON%" make.py --generate-solution=visual-studio-2022 --solution-name=DemoFramework --solution-path=%PROJ_DIR% -o msvc -a x86 -a x64 --at > %GEN_PROJ_LOG_FILE% 2>&1
-if not errorlevel 0 goto gen_proj_failed
+if %ERRORLEVEL% NEQ 0 goto gen_proj_failed
 
 echo ... success
 goto finish

@@ -20,15 +20,15 @@
 pushd %~dp0
 
 set ENV_DIR=_env
-set TMP_DIR=_tmp
+set LOG_DIR=_log
 set SYS_PYTHON=python.exe
 set LOCAL_PYTHON=%ENV_DIR%\Scripts\python.exe
-set UPDATE_PYTHON_LOG_FILE=%TMP_DIR%\update-python.log
-set INSTALL_CSBUILD_LOG_FILE=%TMP_DIR%\install-csbuild.log
+set UPDATE_PYTHON_LOG_FILE=%LOG_DIR%\update-python.log
+set INSTALL_CSBUILD_LOG_FILE=%LOG_DIR%\install-csbuild.log
 
 :: Find the Python executable.
 where /q %SYS_PYTHON%
-if not errorlevel 0 goto find_python_failed
+if %ERRORLEVEL% NEQ 0 goto find_python_failed
 
 %SYS_PYTHON% --version
 
@@ -36,33 +36,33 @@ if not errorlevel 0 goto find_python_failed
 if exist %ENV_DIR% (
 	echo Cleaning build environment ...
 	rmdir /q /s %ENV_DIR%
-	if not errorlevel 0 goto remove_env_failed
+	if %ERRORLEVEL% NEQ 0 goto remove_env_failed
 )
 
-if exist %TMP_DIR% (
+if exist %LOG_DIR% (
 	echo Cleaning temp directory ...
-	rmdir /q /s %TMP_DIR%
-	if not errorlevel 0 goto remove_tmp_failed
+	rmdir /q /s %LOG_DIR%
+	if %ERRORLEVEL% NEQ 0 goto remove_tmp_failed
 )
 
 :: Create the setup temp directory.
-mkdir %TMP_DIR%
-if not errorlevel 0 goto create_tmp_failed
+mkdir %LOG_DIR%
+if %ERRORLEVEL% NEQ 0 goto create_tmp_failed
 
 :: Create a new Python virtual environment.
 echo Generating build environment ...
 %SYS_PYTHON% -m venv _env
-if not errorlevel 0 goto create_env_failed
+if %ERRORLEVEL% NEQ 0 goto create_env_failed
 
 :: Update Python's base packages.
 echo Updating local Python packages ...
 %LOCAL_PYTHON% -m pip install -U pip wheel setuptools > %UPDATE_PYTHON_LOG_FILE% 2>&1
-if not errorlevel 0 goto update_python_pkgs_failed
+if %ERRORLEVEL% NEQ 0 goto update_python_pkgs_failed
 
 :: Install csbuild to the local Python virtual environment.
 echo Installing csbuild locally ...
 %LOCAL_PYTHON% -m pip install -e External/csbuild2 > %INSTALL_CSBUILD_LOG_FILE% 2>&1
-if not errorlevel 0 goto install_csbuild_failed
+if %ERRORLEVEL% NEQ 0 goto install_csbuild_failed
 
 echo ... success
 goto finish
@@ -76,7 +76,7 @@ echo ERROR: Failed to remove %ENV_DIR% directory
 goto exit_with_error
 
 :remove_tmp_failed
-echo ERROR: Failed to remove %TMP_DIR% directory
+echo ERROR: Failed to remove %LOG_DIR% directory
 goto exit_with_error
 
 :create_env_failed
@@ -84,7 +84,7 @@ echo ERROR: Failed to create %ENV_DIR% directory
 goto exit_with_error
 
 :create_tmp_failed
-echo ERROR: Failed to create %TMP_DIR% directory
+echo ERROR: Failed to create %LOG_DIR% directory
 goto exit_with_error
 
 :update_python_pkgs_failed
