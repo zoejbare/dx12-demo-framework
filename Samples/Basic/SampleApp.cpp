@@ -145,9 +145,19 @@ bool SampleApp::Update()
 	using namespace DemoFramework;
 	using namespace DirectX;
 
+	if(m_resizeSwapChain)
+	{
+		RenderBase::ResizeSwapChain(m_renderBase);
+
+		m_resizeSwapChain = false;
+	}
+
 	m_frameTimer.Update();
 
 	static float32_t rotation = 0.0f;
+
+	const uint32_t clientWidth = m_pWindow->GetClientWidth();
+	const uint32_t clientHeight = m_pWindow->GetClientHeight();
 
 	XMVECTOR cameraPosition = XMVectorSet(0.0f, 0.0f, -1.0f, 0.0f);
 	XMVECTOR cameraForward = XMVectorSet(0.0f, 0.0f, 1.0f, 0.0f);
@@ -155,7 +165,7 @@ bool SampleApp::Update()
 
 	m_worldMatrix = XMMatrixRotationAxis(cameraForward, rotation);
 	m_viewMatrix = XMMatrixLookToLH(cameraPosition, cameraForward, cameraUp);
-	m_projMatrix = XMMatrixPerspectiveFovLH(M_PI * 0.5f, 1280.0f / 720.0f, 0.1f, 1000.0f);
+	m_projMatrix = XMMatrixPerspectiveFovLH(M_PI * 0.5f, float32_t(clientWidth) / float32_t(clientHeight), 0.1f, 1000.0f);
 	m_wvpMatrix = XMMatrixMultiply(XMMatrixMultiply(m_worldMatrix, m_viewMatrix), m_projMatrix);
 
 	rotation += M_TAU * float32_t(m_frameTimer.GetDeltaTime()) * 0.1f;
@@ -172,13 +182,6 @@ bool SampleApp::Update()
 void SampleApp::Render()
 {
 	using namespace DemoFramework;
-
-	if(m_resizeSwapChain)
-	{
-		RenderBase::ResizeSwapChain(m_renderBase);
-
-		m_resizeSwapChain = false;
-	}
 
 	const uint32_t clientWidth = m_pWindow->GetClientWidth();
 	const uint32_t clientHeight = m_pWindow->GetClientHeight();
