@@ -1,3 +1,4 @@
 .csbuild/*
 .idea/*
 _*/*
+**/__pycache__/*
