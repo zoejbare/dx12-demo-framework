@@ -64,6 +64,8 @@ bool RenderBase::Initialize(
 	output.swapChainFlags = 0;
 	output.presentTearingFlag = 0;
 
+	output.depthFormat = depthFormat;
+
 	// Verify the DirectX math library is supported on this CPU.
 	if(!DirectX::XMVerifyCPUSupport())
 	{
@@ -141,6 +143,21 @@ bool RenderBase::Initialize(
 		return false;
 	}
 
+	const D3D12_DESCRIPTOR_HEAP_DESC depthDescHeapDesc =
+	{
+		D3D12_DESCRIPTOR_HEAP_TYPE_DSV,  // D3D12_DESCRIPTOR_HEAP_TYPE Type
+		1,                               // UINT NumDescriptors
+		D3D12_DESCRIPTOR_HEAP_FLAG_NONE, // D3D12_DESCRIPTOR_HEAP_FLAGS Flags
+		0,                               // UINT NodeMask
+	};
+
+	// Create the descriptor heap for the depth buffer.
+	output.pDepthDescHeap = D3D12::CreateDescriptorHeap(output.pDevice, depthDescHeapDesc);
+	if(!output.pDepthDescHeap)
+	{
+		return false;
+	}
+
 	const DXGI_SAMPLE_DESC sampleDesc =
 	{
 		1, // UINT Count
@@ -168,77 +185,6 @@ bool RenderBase::Initialize(
 	{
 		return false;
 	}
-
-	const D3D12_DESCRIPTOR_HEAP_DESC depthDescHeapDesc =
-	{
-		D3D12_DESCRIPTOR_HEAP_TYPE_DSV,  // D3D12_DESCRIPTOR_HEAP_TYPE Type
-		1,                               // UINT NumDescriptors
-		D3D12_DESCRIPTOR_HEAP_FLAG_NONE, // D3D12_DESCRIPTOR_HEAP_FLAGS Flags
-		0,                               // UINT NodeMask
-	};
-
-	// Create the descriptor heap for the depth buffer.
-	output.pDepthDescHeap = D3D12::CreateDescriptorHeap(output.pDevice, depthDescHeapDesc);
-	if(!output.pDepthDescHeap)
-	{
-		return false;
-	}
-
-	const DXGI_SAMPLE_DESC depthSampleDesc =
-	{
-		1, // UINT Count
-		0, // UINT Quality
-	};
-
-	const D3D12_RESOURCE_DESC depthBufferDesc =
-	{
-		D3D12_RESOURCE_DIMENSION_TEXTURE2D,         // D3D12_RESOURCE_DIMENSION Dimension
-		D3D12_DEFAULT_RESOURCE_PLACEMENT_ALIGNMENT, // UINT64 Alignment
-		backBufferWidth,                            // UINT64 Width
-		backBufferHeight,                           // UINT Height
-		1,                                          // UINT16 DepthOrArraySize
-		1,                                          // UINT16 MipLevels
-		depthFormat,                                // DXGI_FORMAT Format
-		depthSampleDesc,                            // DXGI_SAMPLE_DESC SampleDesc
-		D3D12_TEXTURE_LAYOUT_UNKNOWN,               // D3D12_TEXTURE_LAYOUT Layout
-		D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL,    // D3D12_RESOURCE_FLAGS Flags
-	};
-
-	const D3D12_HEAP_PROPERTIES depthHeapProps =
-	{
-		D3D12_HEAP_TYPE_DEFAULT,         // D3D12_HEAP_TYPE Type
-		D3D12_CPU_PAGE_PROPERTY_UNKNOWN, // D3D12_CPU_PAGE_PROPERTY CPUPageProperty
-		D3D12_MEMORY_POOL_UNKNOWN,       // D3D12_MEMORY_POOL MemoryPoolPreference
-		0,                               // UINT CreationNodeMask
-		0,                               // UINT VisibleNodeMask
-	};
-
-	D3D12_CLEAR_VALUE depthClearValue;
-	depthClearValue.Format = depthFormat;
-	depthClearValue.DepthStencil.Depth = 1.0f;
-	depthClearValue.DepthStencil.Stencil = 0;
-
-	// Create the depth buffer resource.
-	output.pDepthBuffer = D3D12::CreateCommittedResource(
-		output.pDevice,
-		depthBufferDesc,
-		depthHeapProps,
-		D3D12_HEAP_FLAG_NONE,
-		D3D12_RESOURCE_STATE_DEPTH_WRITE,
-		&depthClearValue);
-	if(!output.pDepthBuffer)
-	{
-		return false;
-	}
-
-
-	D3D12_DEPTH_STENCIL_VIEW_DESC depthViewDesc = {};
-	depthViewDesc.Format = DXGI_FORMAT_D32_FLOAT;
-	depthViewDesc.ViewDimension = D3D12_DSV_DIMENSION_TEXTURE2D;
-	depthViewDesc.Flags = D3D12_DSV_FLAG_NONE;
-
-	// Create the depth/stencil view.
-	output.pDevice->CreateDepthStencilView(output.pDepthBuffer.Get(), &depthViewDesc, output.pDepthDescHeap->GetCPUDescriptorHandleForHeapStart());
 
 	// Get render target views for each back buffer in the swap chain.
 	if(!D3D12::BackBuffer::Create(output.backBuffer, output.pDevice, output.pSwapChain, D3D12_DESCRIPTOR_HEAP_FLAG_NONE, 0))
@@ -328,6 +274,9 @@ void RenderBase::ResizeSwapChain(RenderBase& renderBase)
 		D3D12_DESCRIPTOR_HEAP_FLAG_NONE,
 		0);
 	assert(createBackBuffersResult == true); (void) createBackBuffersResult;
+
+	// Clear the depth buffer so it's created again at the beginning of the frame.
+	renderBase.pDepthBuffer.Reset();
 }
 
 //---------------------------------------------------------------------------------------------------------------------
@@ -335,6 +284,67 @@ void RenderBase::ResizeSwapChain(RenderBase& renderBase)
 void RenderBase::BeginFrame(RenderBase& renderBase)
 {
 	using namespace DemoFramework;
+
+	if(!renderBase.pDepthBuffer)
+	{
+		DXGI_SWAP_CHAIN_DESC1 swapChainDesc;
+		renderBase.pSwapChain->GetDesc1(&swapChainDesc);
+
+		const DXGI_SAMPLE_DESC depthSampleDesc =
+		{
+			1, // UINT Count
+			0, // UINT Quality
+		};
+
+		const D3D12_RESOURCE_DESC depthBufferDesc =
+		{
+			D3D12_RESOURCE_DIMENSION_TEXTURE2D,         // D3D12_RESOURCE_DIMENSION Dimension
+			D3D12_DEFAULT_RESOURCE_PLACEMENT_ALIGNMENT, // UINT64 Alignment
+			swapChainDesc.Width,                        // UINT64 Width
+			swapChainDesc.Height,                       // UINT Height
+			1,                                          // UINT16 DepthOrArraySize
+			1,                                          // UINT16 MipLevels
+			renderBase.depthFormat,                     // DXGI_FORMAT Format
+			depthSampleDesc,                            // DXGI_SAMPLE_DESC SampleDesc
+			D3D12_TEXTURE_LAYOUT_UNKNOWN,               // D3D12_TEXTURE_LAYOUT Layout
+			D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL,    // D3D12_RESOURCE_FLAGS Flags
+		};
+
+		const D3D12_HEAP_PROPERTIES depthHeapProps =
+		{
+			D3D12_HEAP_TYPE_DEFAULT,         // D3D12_HEAP_TYPE Type
+			D3D12_CPU_PAGE_PROPERTY_UNKNOWN, // D3D12_CPU_PAGE_PROPERTY CPUPageProperty
+			D3D12_MEMORY_POOL_UNKNOWN,       // D3D12_MEMORY_POOL MemoryPoolPreference
+			0,                               // UINT CreationNodeMask
+			0,                               // UINT VisibleNodeMask
+		};
+
+		D3D12_CLEAR_VALUE depthClearValue;
+		depthClearValue.Format = renderBase.depthFormat;
+		depthClearValue.DepthStencil.Depth = 1.0f;
+		depthClearValue.DepthStencil.Stencil = 0;
+
+		// Create the depth buffer resource.
+		renderBase.pDepthBuffer = D3D12::CreateCommittedResource(
+			renderBase.pDevice,
+			depthBufferDesc,
+			depthHeapProps,
+			D3D12_HEAP_FLAG_NONE,
+			D3D12_RESOURCE_STATE_DEPTH_WRITE,
+			&depthClearValue);
+		assert(renderBase.pDepthBuffer != nullptr);
+
+		D3D12_DEPTH_STENCIL_VIEW_DESC depthViewDesc = {};
+		depthViewDesc.Format = DXGI_FORMAT_D32_FLOAT;
+		depthViewDesc.ViewDimension = D3D12_DSV_DIMENSION_TEXTURE2D;
+		depthViewDesc.Flags = D3D12_DSV_FLAG_NONE;
+
+		// Create the depth/stencil view.
+		renderBase.pDevice->CreateDepthStencilView(
+			renderBase.pDepthBuffer.Get(),
+			&depthViewDesc,
+			renderBase.pDepthDescHeap->GetCPUDescriptorHandleForHeapStart());
+	}
 
 	renderBase.bufferIndex = renderBase.pSwapChain->GetCurrentBackBufferIndex();
 

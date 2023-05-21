@@ -61,6 +61,7 @@ struct RenderBase
 	DWORD swapChainFlags;
 	DWORD presentTearingFlag;
 
+	DXGI_FORMAT depthFormat;
 	D3D_ROOT_SIGNATURE_VERSION rootSigVersion;
 };
 
