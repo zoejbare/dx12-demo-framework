@@ -40,14 +40,14 @@ if exist %ENV_DIR% (
 )
 
 if exist %LOG_DIR% (
-	echo Cleaning temp directory ...
+	echo Cleaning log directory ...
 	rmdir /q /s %LOG_DIR%
-	if %ERRORLEVEL% NEQ 0 goto remove_tmp_failed
+	if %ERRORLEVEL% NEQ 0 goto remove_log_dir_failed
 )
 
-:: Create the setup temp directory.
+:: Create the setup log directory.
 mkdir %LOG_DIR%
-if %ERRORLEVEL% NEQ 0 goto create_tmp_failed
+if %ERRORLEVEL% NEQ 0 goto create_log_dir_failed
 
 :: Create a new Python virtual environment.
 echo Generating build environment ...
@@ -75,7 +75,7 @@ goto exit_with_error
 echo ERROR: Failed to remove %ENV_DIR% directory
 goto exit_with_error
 
-:remove_tmp_failed
+:remove_log_dir_failed
 echo ERROR: Failed to remove %LOG_DIR% directory
 goto exit_with_error
 
@@ -83,7 +83,7 @@ goto exit_with_error
 echo ERROR: Failed to create %ENV_DIR% directory
 goto exit_with_error
 
-:create_tmp_failed
+:create_log_dir_failed
 echo ERROR: Failed to create %LOG_DIR% directory
 goto exit_with_error
 
