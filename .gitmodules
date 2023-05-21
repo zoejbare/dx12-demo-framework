@@ -1,0 +1,15 @@
+[submodule "External/MicroIni"]
+	path = External/MicroIni
+	url = https://github.com/zoejbare/MicroIni
+[submodule "External/csbuild2"]
+	path = External/csbuild2
+	url = https://github.com/SleepingCatGames/csbuild2.git
+[submodule "External/imgui"]
+	path = External/imgui
+	url = https://github.com/ocornut/imgui.git
+[submodule "External/implot"]
+	path = External/implot
+	url = https://github.com/epezent/implot.git
+[submodule "External/tinyobjloader"]
+	path = External/tinyobjloader
+	url = https://github.com/tinyobjloader/tinyobjloader.git
