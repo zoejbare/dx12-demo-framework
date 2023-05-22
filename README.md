@@ -10,7 +10,7 @@ This project is intended to be free and open source for anyone to use for any re
 
 ## Build Requirements
 
-The following are the minimum dependencies that must be installed to build this project. Newer versions of the following software should work unless otherwise stated.
+These are the minimum dependencies that must be installed to build this project. Newer versions of the following software should work unless otherwise stated.
 
 - Windows 10, version 1703 (10.0; Build 15063)
 - Windows 10 SDK, version 10.0.19041.0
@@ -20,7 +20,7 @@ The following are the minimum dependencies that must be installed to build this 
 
 ## How To Build
 
-Follow these steps to build the projects. If errors occur during the initial setup, logs with more information can be found in the `_log` directory created within the repo root path.
+Follow these steps to build the included projects. If errors occur during the initial setup of the first two steps, logs with more information can be found in the `_log` directory created within the repo root path.
 
 1. Run `setup.bat`
 2. Run `generate-project.bat`
@@ -28,10 +28,10 @@ Follow these steps to build the projects. If errors occur during the initial set
 
 ## Notes
 
-The `setup.bat` script can fail while still attempting to run as if no error occurred when verifying the Python installation. The displayed Python error message may look like this:
+The `setup.bat` script can fail while still attempting to run as if no error occurred when verifying the Python installation, but will raise an error when it attempts to use the non-existent `_env` directory. A Python error message might be displayed which may look like this:
 
 ```
 Python was not found; run without arguments to install from the Microsoft Store, or disable this shortcut from Settings > Manage App Execution Aliases.
 ```
 
-This is because Windows 10 comes with `python.exe` in a special location on the system path that isn't really Python. It's just an app alias that points you to the Microsoft Store if you haven't installed it or made it available on the system path.  You can disable this (as mentioned in the above error message) by turning off the app alias, but you will still need to install at least Python 3.6 or later from some source in order to build this project.
+This is because Windows 10 comes with `python.exe` in a special location on the system path that isn't really Python. It's just an app alias that points you to the Microsoft Store if you haven't installed it or you haven't made an installed copy accessible on the system path.  You can disable this (as mentioned in the above error message) by turning off the app alias for Python, but you will still need to install at least Python 3.6 or later from some source in order to build this project.
