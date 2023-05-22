@@ -1,5 +1,7 @@
 # DirectX 12 Demo Framework
 
+[![TeamCity](https://dev.aegresco.com/teamcity/guestAuth/app/rest/builds/buildType:(id:Dx12DemoFramework_BuildAllProjects),branch:(develop)/statusIcon)](https://dev.aegresco.com/teamcity/viewType.html?buildTypeId=Dx12DemoFramework_BuildAllProjects&guest=1)
+
 A simple framework for building DirectX 12 applications with samples demonstrating its use as well as showcasing graphics research projects.
 
 ## License
