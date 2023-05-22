@@ -28,10 +28,10 @@ Follow these steps to build the projects. If errors occur during the initial set
 
 ## Notes
 
-The `setup.bat` script can fail without returning an error if Python is not installed or not on the system path. The error may look like this:
+The `setup.bat` script can fail while still attempting to run as if no error occurred when verifying the Python installation. The displayed Python error message may look like this:
 
 ```
 Python was not found; run without arguments to install from the Microsoft Store, or disable this shortcut from Settings > Manage App Execution Aliases.
 ```
 
-This is because Windows 10 comes with `python.exe` in a special location on the system path that isn't really Python. It's just an app alias that points you to the Microsoft Store if you haven't installed it from there or otherwise.  You can disable this (as mentioned in the above error message) by turning off the app alias, but you will still need to install at least Python 3.6 or later from some source in order to build this project.
+This is because Windows 10 comes with `python.exe` in a special location on the system path that isn't really Python. It's just an app alias that points you to the Microsoft Store if you haven't installed it or made it available on the system path.  You can disable this (as mentioned in the above error message) by turning off the app alias, but you will still need to install at least Python 3.6 or later from some source in order to build this project.
