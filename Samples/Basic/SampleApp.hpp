@@ -20,10 +20,9 @@
 //---------------------------------------------------------------------------------------------------------------------
 
 #include "../Common/AppController.hpp"
-#include "../Common/RenderBase.hpp"
 
 #include <DemoFramework/Application/FrameTimer.hpp>
-#include <DemoFramework/Direct3D12/Types.hpp>
+#include <DemoFramework/Direct3D12/RenderBase.hpp>
 
 #include <DirectXMath.h>
 
@@ -63,6 +62,8 @@ private:
 
 	DemoFramework::Window* m_pWindow;
 
+	DemoFramework::D3D12::RenderBase* m_pRenderBase;
+
 	DemoFramework::D3D12::RootSignaturePtr m_pRootSignature;
 	DemoFramework::D3D12::PipelineStatePtr m_pGfxPipeline;
 	DemoFramework::D3D12::DescriptorHeapPtr m_pVertexShaderDescHeap;
@@ -71,7 +72,7 @@ private:
 	DemoFramework::D3D12::ResourcePtr m_pQuadIndexBuffer;
 
 	DemoFramework::D3D12::ResourcePtr m_pConstBuffer;
-	DemoFramework::D3D12::ResourcePtr m_pStagingConstBuffer[BACK_BUFFER_MAX_COUNT];
+	DemoFramework::D3D12::ResourcePtr m_pStagingConstBuffer[DF_SWAP_CHAIN_BUFFER_MAX_COUNT];
 
 	DemoFramework::D3D12::BlobPtr m_pVertexShader;
 	DemoFramework::D3D12::BlobPtr m_pPixelShader;
@@ -83,8 +84,6 @@ private:
 	DirectX::XMMATRIX m_projMatrix;
 	DirectX::XMMATRIX m_wvpMatrix;
 
-	RenderBase m_renderBase;
-
 	bool m_resizeSwapChain;
 };
 
@@ -92,6 +91,7 @@ private:
 
 inline SampleApp::SampleApp()
 	: m_pWindow()
+	, m_pRenderBase(nullptr)
 	, m_pRootSignature()
 	, m_pGfxPipeline()
 	, m_pVertexShaderDescHeap()
@@ -104,7 +104,6 @@ inline SampleApp::SampleApp()
 	, m_viewMatrix()
 	, m_projMatrix()
 	, m_wvpMatrix()
-	, m_renderBase()
 	, m_resizeSwapChain(false)
 {
 	m_frameTimer.SetFrameRateLocked(false);

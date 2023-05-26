@@ -15,49 +15,61 @@
 // CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
 // IN THE SOFTWARE.
 //
-#pragma once
+
+#include "Shader.hpp"
+
+#include "../Application/Log.hpp"
+
+#include "LowLevel/Blob.hpp"
+
+#include <stdio.h>
 
 //---------------------------------------------------------------------------------------------------------------------
 
-#include "AppController.hpp"
-
-#include <DemoFramework/Application/AppView.hpp>
-#include <DemoFramework/Application/Window.hpp>
-
-//---------------------------------------------------------------------------------------------------------------------
-
-class CommonAppView
-	: public DemoFramework::IAppView
+DemoFramework::D3D12::BlobPtr DemoFramework::D3D12::LoadShaderFromFile(const char* const filePath)
 {
-public:
+	if(!filePath || filePath[0] == '\0')
+	{
+		LOG_ERROR("Invalid parameter");
+		return nullptr;
+	}
 
-	CommonAppView(const CommonAppView&) = delete;
-	CommonAppView(CommonAppView&&) = delete;
+	LOG_WRITE("Loading shader '%s' ...", filePath);
 
-	CommonAppView& operator =(const CommonAppView&) = delete;
-	CommonAppView& operator =(CommonAppView&&) = delete;
+	// Open the input file.
+	FILE* const pFile = fopen(filePath, "rb");
+	if(!pFile)
+	{
+		LOG_ERROR("Failed to open file: %s", filePath);
+		return nullptr;
+	}
 
-	CommonAppView() = delete;
-	explicit CommonAppView(IAppController* pAppController);
-	virtual ~CommonAppView() {}
+	// Find the size of the file.
+	fseek(pFile, 0, SEEK_END);
+	const size_t fileSize = ftell(pFile);
+	fseek(pFile, 0, SEEK_SET);
 
-	virtual bool Initialize() override;
-	virtual bool MainLoopUpdate() override;
-	virtual void Shutdown() override;
+	// Verify the file is not empty.
+	if(fileSize == 0)
+	{
+		fclose(pFile);
+		LOG_ERROR("Shader file is empty: %s", filePath);
+		return nullptr;
+	}
 
+	// Create the blob that will manage the lifetime of the shader data.
+	BlobPtr pOutput = CreateBlob(fileSize);
+	if(!pOutput)
+	{
+		fclose(pFile);
+		return nullptr;
+	}
 
-protected:
+	// Read the contents of the file directly into the blob.
+	fread(pOutput->GetBufferPointer(), fileSize, 1, pFile);
+	fclose(pFile);
 
-	DemoFramework::Window* m_pWindow;
-	IAppController* m_pAppController;
-};
-
-//---------------------------------------------------------------------------------------------------------------------
-
-inline CommonAppView::CommonAppView(IAppController* pAppController)
-	: m_pWindow(nullptr)
-	, m_pAppController(pAppController)
-{
+	return pOutput;
 }
 
 //---------------------------------------------------------------------------------------------------------------------

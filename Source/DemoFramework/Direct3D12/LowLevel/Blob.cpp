@@ -15,49 +15,27 @@
 // CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
 // IN THE SOFTWARE.
 //
-#pragma once
+
+#include "Blob.hpp"
+
+#include "../../Application/Log.hpp"
+
+#include <d3dcompiler.h>
 
 //---------------------------------------------------------------------------------------------------------------------
 
-#include "AppController.hpp"
-
-#include <DemoFramework/Application/AppView.hpp>
-#include <DemoFramework/Application/Window.hpp>
-
-//---------------------------------------------------------------------------------------------------------------------
-
-class CommonAppView
-	: public DemoFramework::IAppView
+DemoFramework::D3D12::BlobPtr DemoFramework::D3D12::CreateBlob(const size_t size)
 {
-public:
+	BlobPtr pOutput;
 
-	CommonAppView(const CommonAppView&) = delete;
-	CommonAppView(CommonAppView&&) = delete;
+	const HRESULT result = D3DCreateBlob(size, &pOutput);
+	if(result != S_OK)
+	{
+		LOG_ERROR("Failed to create D3D blob; result='0x%08" PRIX32 "'", result);
+		return nullptr;
+	}
 
-	CommonAppView& operator =(const CommonAppView&) = delete;
-	CommonAppView& operator =(CommonAppView&&) = delete;
-
-	CommonAppView() = delete;
-	explicit CommonAppView(IAppController* pAppController);
-	virtual ~CommonAppView() {}
-
-	virtual bool Initialize() override;
-	virtual bool MainLoopUpdate() override;
-	virtual void Shutdown() override;
-
-
-protected:
-
-	DemoFramework::Window* m_pWindow;
-	IAppController* m_pAppController;
-};
-
-//---------------------------------------------------------------------------------------------------------------------
-
-inline CommonAppView::CommonAppView(IAppController* pAppController)
-	: m_pWindow(nullptr)
-	, m_pAppController(pAppController)
-{
+	return pOutput;
 }
 
 //---------------------------------------------------------------------------------------------------------------------

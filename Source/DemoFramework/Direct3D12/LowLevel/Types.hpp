@@ -19,45 +19,51 @@
 
 //---------------------------------------------------------------------------------------------------------------------
 
-#include "AppController.hpp"
+#include "../../BuildSetup.h"
 
-#include <DemoFramework/Application/AppView.hpp>
-#include <DemoFramework/Application/Window.hpp>
+#include <d3d12.h>
+#include <dxgi1_6.h>
+#include <wrl.h>
 
 //---------------------------------------------------------------------------------------------------------------------
 
-class CommonAppView
-	: public DemoFramework::IAppView
+#define DF_SWAP_CHAIN_BUFFER_MAX_COUNT 3
+
+#define DF_DECL_WRL_COM_TYPE(ifaceName, typeName) \
+	class DF_API typeName : public Microsoft::WRL::ComPtr<ifaceName> { public: using Microsoft::WRL::ComPtr<ifaceName>::ComPtr; }
+
+//---------------------------------------------------------------------------------------------------------------------
+
+EXTERN_C const IID IID_D3D12_ID3DEvent;
+
+MIDL_INTERFACE("BFBD1EDC-60DB-4322-8F28-40581ACFCCA2")
+ID3DEvent
+	: public IUnknown
 {
-public:
-
-	CommonAppView(const CommonAppView&) = delete;
-	CommonAppView(CommonAppView&&) = delete;
-
-	CommonAppView& operator =(const CommonAppView&) = delete;
-	CommonAppView& operator =(CommonAppView&&) = delete;
-
-	CommonAppView() = delete;
-	explicit CommonAppView(IAppController* pAppController);
-	virtual ~CommonAppView() {}
-
-	virtual bool Initialize() override;
-	virtual bool MainLoopUpdate() override;
-	virtual void Shutdown() override;
-
-
-protected:
-
-	DemoFramework::Window* m_pWindow;
-	IAppController* m_pAppController;
+	virtual HANDLE GetHandle() const = 0;
 };
 
 //---------------------------------------------------------------------------------------------------------------------
 
-inline CommonAppView::CommonAppView(IAppController* pAppController)
-	: m_pWindow(nullptr)
-	, m_pAppController(pAppController)
-{
-}
+namespace DemoFramework { namespace D3D12 {
+	DF_DECL_WRL_COM_TYPE(ID3DBlob, BlobPtr);
+	DF_DECL_WRL_COM_TYPE(ID3DEvent, EventPtr);
+
+	DF_DECL_WRL_COM_TYPE(ID3D12CommandQueue, CommandQueuePtr);
+	DF_DECL_WRL_COM_TYPE(ID3D12CommandAllocator, CommandAllocatorPtr);
+	DF_DECL_WRL_COM_TYPE(ID3D12Debug, DebugPtr);
+	DF_DECL_WRL_COM_TYPE(ID3D12DescriptorHeap, DescriptorHeapPtr);
+	DF_DECL_WRL_COM_TYPE(ID3D12Device2, DevicePtr);
+	DF_DECL_WRL_COM_TYPE(ID3D12InfoQueue, InfoQueuePtr);
+	DF_DECL_WRL_COM_TYPE(ID3D12Fence, FencePtr);
+	DF_DECL_WRL_COM_TYPE(ID3D12GraphicsCommandList, GraphicsCommandListPtr);
+	DF_DECL_WRL_COM_TYPE(ID3D12PipelineState, PipelineStatePtr);
+	DF_DECL_WRL_COM_TYPE(ID3D12Resource, ResourcePtr);
+	DF_DECL_WRL_COM_TYPE(ID3D12RootSignature, RootSignaturePtr);
+
+	DF_DECL_WRL_COM_TYPE(IDXGIAdapter4, AdapterPtr);
+	DF_DECL_WRL_COM_TYPE(IDXGIFactory4, FactoryPtr);
+	DF_DECL_WRL_COM_TYPE(IDXGISwapChain4, SwapChainPtr);
+}}
 
 //---------------------------------------------------------------------------------------------------------------------

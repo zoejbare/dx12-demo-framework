@@ -15,49 +15,33 @@
 // CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
 // IN THE SOFTWARE.
 //
-#pragma once
+
+#include "PipelineState.hpp"
+
+#include "../../Application/Log.hpp"
 
 //---------------------------------------------------------------------------------------------------------------------
 
-#include "AppController.hpp"
-
-#include <DemoFramework/Application/AppView.hpp>
-#include <DemoFramework/Application/Window.hpp>
-
-//---------------------------------------------------------------------------------------------------------------------
-
-class CommonAppView
-	: public DemoFramework::IAppView
+DemoFramework::D3D12::PipelineStatePtr DemoFramework::D3D12::CreatePipelineState(
+	const DevicePtr& pDevice,
+	const D3D12_GRAPHICS_PIPELINE_STATE_DESC& desc)
 {
-public:
+	if(!pDevice)
+	{
+		LOG_ERROR("Invalid parameter");
+		return nullptr;
+	}
 
-	CommonAppView(const CommonAppView&) = delete;
-	CommonAppView(CommonAppView&&) = delete;
+	D3D12::PipelineStatePtr pOutput;
 
-	CommonAppView& operator =(const CommonAppView&) = delete;
-	CommonAppView& operator =(CommonAppView&&) = delete;
+	const HRESULT result = pDevice->CreateGraphicsPipelineState(&desc, IID_PPV_ARGS(&pOutput));
+	if(result != S_OK)
+	{
+		LOG_ERROR("Failed to create graphics pipeline state; result='0x%08" PRIX32 "'", result);
+		return nullptr;
+	}
 
-	CommonAppView() = delete;
-	explicit CommonAppView(IAppController* pAppController);
-	virtual ~CommonAppView() {}
-
-	virtual bool Initialize() override;
-	virtual bool MainLoopUpdate() override;
-	virtual void Shutdown() override;
-
-
-protected:
-
-	DemoFramework::Window* m_pWindow;
-	IAppController* m_pAppController;
-};
-
-//---------------------------------------------------------------------------------------------------------------------
-
-inline CommonAppView::CommonAppView(IAppController* pAppController)
-	: m_pWindow(nullptr)
-	, m_pAppController(pAppController)
-{
+	return pOutput;
 }
 
 //---------------------------------------------------------------------------------------------------------------------

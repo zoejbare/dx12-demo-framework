@@ -19,44 +19,52 @@
 
 //---------------------------------------------------------------------------------------------------------------------
 
-#include "AppController.hpp"
-
-#include <DemoFramework/Application/AppView.hpp>
-#include <DemoFramework/Application/Window.hpp>
+#include "LowLevel/Types.hpp"
 
 //---------------------------------------------------------------------------------------------------------------------
 
-class CommonAppView
-	: public DemoFramework::IAppView
+namespace DemoFramework { namespace D3D12 {
+	class Sync;
+}}
+
+//---------------------------------------------------------------------------------------------------------------------
+
+class DF_API DemoFramework::D3D12::Sync
 {
 public:
 
-	CommonAppView(const CommonAppView&) = delete;
-	CommonAppView(CommonAppView&&) = delete;
+	Sync();
+	Sync(const Sync&) = delete;
+	Sync(Sync&&) = delete;
 
-	CommonAppView& operator =(const CommonAppView&) = delete;
-	CommonAppView& operator =(CommonAppView&&) = delete;
+	Sync& operator =(const Sync&) = delete;
+	Sync& operator =(Sync&&) = delete;
 
-	CommonAppView() = delete;
-	explicit CommonAppView(IAppController* pAppController);
-	virtual ~CommonAppView() {}
+	bool Initialize(const DevicePtr& pDevice, D3D12_FENCE_FLAGS flags);
 
-	virtual bool Initialize() override;
-	virtual bool MainLoopUpdate() override;
-	virtual void Shutdown() override;
+	void Signal(const CommandQueuePtr& pCmdQueue);
+	void Wait(uint32_t timeout = INFINITE);
 
 
-protected:
+private:
 
-	DemoFramework::Window* m_pWindow;
-	IAppController* m_pAppController;
+	FencePtr m_pFence;
+	EventPtr m_pEvent;
+
+	uint64_t m_waitValue;
+	uint64_t m_nextValue;
+
+	bool m_initialized;
 };
 
 //---------------------------------------------------------------------------------------------------------------------
 
-inline CommonAppView::CommonAppView(IAppController* pAppController)
-	: m_pWindow(nullptr)
-	, m_pAppController(pAppController)
+inline DemoFramework::D3D12::Sync::Sync()
+	: m_pFence()
+	, m_pEvent()
+	, m_waitValue(0)
+	, m_nextValue(0)
+	, m_initialized(false)
 {
 }
 

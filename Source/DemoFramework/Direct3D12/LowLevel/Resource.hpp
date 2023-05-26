@@ -19,45 +19,19 @@
 
 //---------------------------------------------------------------------------------------------------------------------
 
-#include "AppController.hpp"
-
-#include <DemoFramework/Application/AppView.hpp>
-#include <DemoFramework/Application/Window.hpp>
+#include "Types.hpp"
 
 //---------------------------------------------------------------------------------------------------------------------
 
-class CommonAppView
-	: public DemoFramework::IAppView
-{
-public:
-
-	CommonAppView(const CommonAppView&) = delete;
-	CommonAppView(CommonAppView&&) = delete;
-
-	CommonAppView& operator =(const CommonAppView&) = delete;
-	CommonAppView& operator =(CommonAppView&&) = delete;
-
-	CommonAppView() = delete;
-	explicit CommonAppView(IAppController* pAppController);
-	virtual ~CommonAppView() {}
-
-	virtual bool Initialize() override;
-	virtual bool MainLoopUpdate() override;
-	virtual void Shutdown() override;
-
-
-protected:
-
-	DemoFramework::Window* m_pWindow;
-	IAppController* m_pAppController;
-};
-
-//---------------------------------------------------------------------------------------------------------------------
-
-inline CommonAppView::CommonAppView(IAppController* pAppController)
-	: m_pWindow(nullptr)
-	, m_pAppController(pAppController)
-{
-}
+namespace DemoFramework { namespace D3D12 {
+	DF_API ResourcePtr CreateCommittedResource(
+		const DevicePtr& pDevice,
+		const D3D12_RESOURCE_DESC& desc,
+		const D3D12_HEAP_PROPERTIES& heapProps,
+		D3D12_HEAP_FLAGS heapFlags,
+		D3D12_RESOURCE_STATES states,
+		const D3D12_CLEAR_VALUE* pOptimizedClearValue = nullptr
+	);
+}}
 
 //---------------------------------------------------------------------------------------------------------------------

@@ -19,45 +19,15 @@
 
 //---------------------------------------------------------------------------------------------------------------------
 
-#include "AppController.hpp"
+#include "../../BuildSetup.h"
 
-#include <DemoFramework/Application/AppView.hpp>
-#include <DemoFramework/Application/Window.hpp>
-
-//---------------------------------------------------------------------------------------------------------------------
-
-class CommonAppView
-	: public DemoFramework::IAppView
-{
-public:
-
-	CommonAppView(const CommonAppView&) = delete;
-	CommonAppView(CommonAppView&&) = delete;
-
-	CommonAppView& operator =(const CommonAppView&) = delete;
-	CommonAppView& operator =(CommonAppView&&) = delete;
-
-	CommonAppView() = delete;
-	explicit CommonAppView(IAppController* pAppController);
-	virtual ~CommonAppView() {}
-
-	virtual bool Initialize() override;
-	virtual bool MainLoopUpdate() override;
-	virtual void Shutdown() override;
-
-
-protected:
-
-	DemoFramework::Window* m_pWindow;
-	IAppController* m_pAppController;
-};
+#include "Types.hpp"
 
 //---------------------------------------------------------------------------------------------------------------------
 
-inline CommonAppView::CommonAppView(IAppController* pAppController)
-	: m_pWindow(nullptr)
-	, m_pAppController(pAppController)
-{
-}
+
+namespace DemoFramework { namespace D3D12 {
+	EventPtr CreateEvent(SECURITY_ATTRIBUTES* const pEventAttr, bool manualReset, bool initialState, const char* name);
+}}
 
 //---------------------------------------------------------------------------------------------------------------------

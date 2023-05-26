@@ -15,49 +15,37 @@
 // CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
 // IN THE SOFTWARE.
 //
-#pragma once
+
+#include "Resource.hpp"
+
+#include "../../Application/Log.hpp"
 
 //---------------------------------------------------------------------------------------------------------------------
 
-#include "AppController.hpp"
-
-#include <DemoFramework/Application/AppView.hpp>
-#include <DemoFramework/Application/Window.hpp>
-
-//---------------------------------------------------------------------------------------------------------------------
-
-class CommonAppView
-	: public DemoFramework::IAppView
+DemoFramework::D3D12::ResourcePtr DemoFramework::D3D12::CreateCommittedResource(
+	const DevicePtr& pDevice,
+	const D3D12_RESOURCE_DESC& desc,
+	const D3D12_HEAP_PROPERTIES& heapProps,
+	const D3D12_HEAP_FLAGS heapFlags,
+	const D3D12_RESOURCE_STATES states,
+	const D3D12_CLEAR_VALUE* const pOptimizedClearValue)
 {
-public:
+	if(!pDevice)
+	{
+		LOG_ERROR("Invalid parameter");
+		return nullptr;
+	}
 
-	CommonAppView(const CommonAppView&) = delete;
-	CommonAppView(CommonAppView&&) = delete;
+	D3D12::ResourcePtr pOutput;
 
-	CommonAppView& operator =(const CommonAppView&) = delete;
-	CommonAppView& operator =(CommonAppView&&) = delete;
+	const HRESULT result = pDevice->CreateCommittedResource(&heapProps, heapFlags, &desc, states, pOptimizedClearValue, IID_PPV_ARGS(&pOutput));
+	if(result != S_OK)
+	{
+		LOG_ERROR("Failed to create resource; result='0x%08" PRIX32 "'", result);
+		return nullptr;
+	}
 
-	CommonAppView() = delete;
-	explicit CommonAppView(IAppController* pAppController);
-	virtual ~CommonAppView() {}
-
-	virtual bool Initialize() override;
-	virtual bool MainLoopUpdate() override;
-	virtual void Shutdown() override;
-
-
-protected:
-
-	DemoFramework::Window* m_pWindow;
-	IAppController* m_pAppController;
-};
-
-//---------------------------------------------------------------------------------------------------------------------
-
-inline CommonAppView::CommonAppView(IAppController* pAppController)
-	: m_pWindow(nullptr)
-	, m_pAppController(pAppController)
-{
+	return pOutput;
 }
 
 //---------------------------------------------------------------------------------------------------------------------

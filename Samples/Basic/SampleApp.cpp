@@ -21,16 +21,15 @@
 #include <DemoFramework/Application/Log.hpp>
 #include <DemoFramework/Application/Window.hpp>
 
-#include <DemoFramework/Direct3D12/CommandAllocator.hpp>
-#include <DemoFramework/Direct3D12/DescriptorHeap.hpp>
-#include <DemoFramework/Direct3D12/GraphicsCommandList.hpp>
-#include <DemoFramework/Direct3D12/PipelineState.hpp>
-#include <DemoFramework/Direct3D12/Resource.hpp>
-#include <DemoFramework/Direct3D12/RootSignature.hpp>
+#include <DemoFramework/Direct3D12/LowLevel/CommandAllocator.hpp>
+#include <DemoFramework/Direct3D12/LowLevel/DescriptorHeap.hpp>
+#include <DemoFramework/Direct3D12/LowLevel/GraphicsCommandList.hpp>
+#include <DemoFramework/Direct3D12/LowLevel/PipelineState.hpp>
+#include <DemoFramework/Direct3D12/LowLevel/Resource.hpp>
+#include <DemoFramework/Direct3D12/LowLevel/RootSignature.hpp>
 
-#include <DemoFramework/Direct3D12/Struct/Sync.hpp>
-
-#include "../Common/Shader.hpp"
+#include <DemoFramework/Direct3D12/Shader.hpp>
+#include <DemoFramework/Direct3D12/Sync.hpp>
 
 #include <math.h>
 
@@ -105,8 +104,10 @@ bool SampleApp::Initialize(DemoFramework::Window* const pWindow)
 	const uint32_t clientWidth = m_pWindow->GetClientWidth();
 	const uint32_t clientHeight = m_pWindow->GetClientHeight();
 
+	m_pRenderBase = new D3D12::RenderBase();
+
 	// Initialize the common rendering resources.
-	if(!RenderBase::Initialize(m_renderBase, hWnd, clientWidth, clientHeight, APP_BACK_BUFFER_COUNT, APP_BACK_BUFFER_FORMAT, APP_DEPTH_BUFFER_FORMAT))
+	if(!m_pRenderBase->Initialize(hWnd, clientWidth, clientHeight, APP_BACK_BUFFER_COUNT, APP_BACK_BUFFER_FORMAT, APP_DEPTH_BUFFER_FORMAT))
 	{
 		return false;
 	}
@@ -147,7 +148,8 @@ bool SampleApp::Update()
 
 	if(m_resizeSwapChain)
 	{
-		RenderBase::ResizeSwapChain(m_renderBase);
+		const bool resizeSwapChainResult = m_pRenderBase->ResizeSwapChain();
+		assert(resizeSwapChainResult == true); (void) resizeSwapChainResult;
 
 		m_resizeSwapChain = false;
 	}
@@ -185,22 +187,25 @@ void SampleApp::Render()
 
 	const uint32_t clientWidth = m_pWindow->GetClientWidth();
 	const uint32_t clientHeight = m_pWindow->GetClientHeight();
+	const uint32_t bufferIndex = m_pRenderBase->GetBufferIndex();
 
-	RenderBase::BeginFrame(m_renderBase);
-	RenderBase::SetDefaultRenderTarget(m_renderBase);
+	m_pRenderBase->BeginFrame();
+	m_pRenderBase->SetBackBufferAsRenderTarget();
+
+	// The swap chain buffer index is updated during the call to BeginFrame(),
+	// so we need to wait until *after* that to get the current command list.
+	ID3D12GraphicsCommandList* const pCmdList = m_pRenderBase->GetCmdList().Get();
 
 	void* pConstData = nullptr;
 
 	// Map the staging buffer to CPU-accessible memory (write-only access) and copy the constant data to it.
 	const D3D12_RANGE dummyReadRange = {0, 0};
-	const HRESULT result = m_pStagingConstBuffer[m_renderBase.bufferIndex]->Map(0, &dummyReadRange, &pConstData);
+	const HRESULT result = m_pStagingConstBuffer[bufferIndex]->Map(0, &dummyReadRange, &pConstData);
 	if(result == S_OK)
 	{
 		memcpy(pConstData, &m_wvpMatrix, sizeof(m_wvpMatrix));
-		m_pStagingConstBuffer[m_renderBase.bufferIndex]->Unmap(0, nullptr);
+		m_pStagingConstBuffer[bufferIndex]->Unmap(0, nullptr);
 	}
-
-	ID3D12GraphicsCommandList* const pCmdList = m_renderBase.pCmdList[m_renderBase.bufferIndex].Get();
 
 	ID3D12DescriptorHeap* const pDescHeaps[] =
 	{
@@ -225,7 +230,7 @@ void SampleApp::Render()
 
 	// Initiate a copy of constant buffer data from staging memory.
 	pCmdList->ResourceBarrier(1, &constBufferBeginBarrier);
-	pCmdList->CopyResource(m_pConstBuffer.Get(), m_pStagingConstBuffer[m_renderBase.bufferIndex].Get());
+	pCmdList->CopyResource(m_pConstBuffer.Get(), m_pStagingConstBuffer[bufferIndex].Get());
 	pCmdList->ResourceBarrier(1, &constBufferEndBarrier);
 
 	// Set the graphics pipeline state.
@@ -278,7 +283,7 @@ void SampleApp::Render()
 	// Draw the bound geometry.
 	pCmdList->DrawIndexedInstanced(6, 1, 0, 0, 0);
 
-	RenderBase::EndFrame(m_renderBase, true);
+	m_pRenderBase->EndFrame(true);
 }
 
 //---------------------------------------------------------------------------------------------------------------------
@@ -294,7 +299,7 @@ void SampleApp::Shutdown()
 	m_pVertexShaderDescHeap.Reset();
 
 	// Clean up the common render resources last.
-	RenderBase::Destroy(m_renderBase);
+	delete m_pRenderBase;
 }
 
 //---------------------------------------------------------------------------------------------------------------------
@@ -326,13 +331,15 @@ const char* SampleApp::GetLogFilename() const
 
 bool SampleApp::prv_loadShaders()
 {
-	m_pVertexShader = LoadShaderFromFile("basic.vertex.hlsl.bin");
+	using namespace DemoFramework;
+
+	m_pVertexShader = D3D12::LoadShaderFromFile("basic.vertex.hlsl.bin");
 	if(!m_pVertexShader)
 	{
 		return false;
 	}
 
-	m_pPixelShader = LoadShaderFromFile("basic.pixel.hlsl.bin");
+	m_pPixelShader = D3D12::LoadShaderFromFile("basic.pixel.hlsl.bin");
 	if(!m_pPixelShader)
 	{
 		return false;
@@ -348,6 +355,8 @@ bool SampleApp::prv_createGfxPipeline()
 	using namespace DemoFramework;
 
 	LOG_WRITE("Creating graphics pipeline resources ...");
+
+	const D3D12::DevicePtr& pDevice = m_pRenderBase->GetDevice().Get();
 
 	const D3D12_DESCRIPTOR_RANGE descRange =
 	{
@@ -382,7 +391,7 @@ bool SampleApp::prv_createGfxPipeline()
 	};
 
 	// Create the pipeline root signature.
-	m_pRootSignature = D3D12::CreateRootSignature(m_renderBase.pDevice, rootSigDesc);
+	m_pRootSignature = D3D12::CreateRootSignature(pDevice, rootSigDesc);
 	if(!m_pRootSignature)
 	{
 		return false;
@@ -508,7 +517,7 @@ bool SampleApp::prv_createGfxPipeline()
 	};
 
 	// Create the graphics pipeline state.
-	m_pGfxPipeline = D3D12::CreatePipelineState(m_renderBase.pDevice, gfxPipelineDesc);
+	m_pGfxPipeline = D3D12::CreatePipelineState(pDevice, gfxPipelineDesc);
 	if(!m_pGfxPipeline)
 	{
 		return false;
@@ -522,6 +531,9 @@ bool SampleApp::prv_createGfxPipeline()
 bool SampleApp::prv_createQuadGeometry()
 {
 	using namespace DemoFramework;
+
+	const D3D12::DevicePtr& pDevice = m_pRenderBase->GetDevice();
+	const D3D12::CommandQueuePtr& pCmdQueue = m_pRenderBase->GetCmdQueue();
 
 	// Construct the geometry for a quad
 	const Vertex triangleVertices[] =
@@ -551,7 +563,7 @@ bool SampleApp::prv_createQuadGeometry()
 
 	// Create the vertex buffer.
 	m_pQuadVertexBuffer = D3D12::CreateCommittedResource(
-		m_renderBase.pDevice,
+		pDevice,
 		vertexBufferDesc,
 		defaultHeapProps,
 		D3D12_HEAP_FLAG_NONE,
@@ -563,7 +575,7 @@ bool SampleApp::prv_createQuadGeometry()
 
 	// Create the staging vertex buffer.
 	D3D12::ResourcePtr pStagingVertexBuffer = D3D12::CreateCommittedResource(
-		m_renderBase.pDevice,
+		pDevice,
 		vertexBufferDesc,
 		uploadHeapProps,
 		D3D12_HEAP_FLAG_NONE,
@@ -603,7 +615,7 @@ bool SampleApp::prv_createQuadGeometry()
 
 	// Create the index buffer.
 	m_pQuadIndexBuffer = D3D12::CreateCommittedResource(
-		m_renderBase.pDevice,
+		pDevice,
 		indexBufferDesc,
 		defaultHeapProps,
 		D3D12_HEAP_FLAG_NONE,
@@ -615,7 +627,7 @@ bool SampleApp::prv_createQuadGeometry()
 
 	// Create the staging index buffer.
 	D3D12::ResourcePtr pStagingIndexBuffer = D3D12::CreateCommittedResource(
-		m_renderBase.pDevice,
+		pDevice,
 		indexBufferDesc,
 		uploadHeapProps,
 		D3D12_HEAP_FLAG_NONE,
@@ -641,20 +653,20 @@ bool SampleApp::prv_createQuadGeometry()
 
 	// Create the staging command synchronization primitive so we don't kill resources while they're currently in use.
 	D3D12::Sync tempCmdSync;
-	if(!D3D12::Sync::Create(tempCmdSync, m_renderBase.pDevice, D3D12_FENCE_FLAG_NONE))
+	if(!tempCmdSync.Initialize(pDevice, D3D12_FENCE_FLAG_NONE))
 	{
 		return false;
 	}
 
 	// Create the staging command allocator.
-	D3D12::CommandAllocatorPtr pTempCmdAlloc = D3D12::CreateCommandAllocator(m_renderBase.pDevice, D3D12_COMMAND_LIST_TYPE_DIRECT);
+	D3D12::CommandAllocatorPtr pTempCmdAlloc = D3D12::CreateCommandAllocator(pDevice, D3D12_COMMAND_LIST_TYPE_DIRECT);
 	if(!pTempCmdAlloc)
 	{
 		return false;
 	}
 
 	// Create the staging command list.
-	D3D12::GraphicsCommandListPtr pTempCmdList = D3D12::CreateGraphicsCommandList(m_renderBase.pDevice, pTempCmdAlloc, D3D12_COMMAND_LIST_TYPE_DIRECT, 0);
+	D3D12::GraphicsCommandListPtr pTempCmdList = D3D12::CreateGraphicsCommandList(pDevice, pTempCmdAlloc, D3D12_COMMAND_LIST_TYPE_DIRECT, 0);
 	if(!pTempCmdList)
 	{
 		return false;
@@ -694,11 +706,11 @@ bool SampleApp::prv_createQuadGeometry()
 	};
 
 	// Begin executing the staging command list.
-	m_renderBase.pCmdQueue->ExecuteCommandLists(1, pCmdLists);
+	pCmdQueue->ExecuteCommandLists(1, pCmdLists);
 
 	// Add a synchronization signal after the staging command list, then wait for it.
-	D3D12::Sync::Signal(tempCmdSync, m_renderBase.pCmdQueue);
-	D3D12::Sync::Wait(tempCmdSync);
+	tempCmdSync.Signal(pCmdQueue);
+	tempCmdSync.Wait();
 
 	return true;
 }
@@ -710,6 +722,8 @@ bool SampleApp::prv_createConstBuffer()
 	using namespace DemoFramework;
 
 	LOG_WRITE("Creating constant buffer resources ...");
+
+	const D3D12::DevicePtr& pDevice = m_pRenderBase->GetDevice();
 
 	// Constant buffers are required to have a size that is 256-byte aligned.
 	const D3D12_RESOURCE_DESC constBufferDesc =
@@ -728,7 +742,7 @@ bool SampleApp::prv_createConstBuffer()
 
 	// Create the constant buffer.
 	m_pConstBuffer = D3D12::CreateCommittedResource(
-		m_renderBase.pDevice,
+		pDevice,
 		constBufferDesc,
 		defaultHeapProps,
 		D3D12_HEAP_FLAG_NONE,
@@ -742,7 +756,7 @@ bool SampleApp::prv_createConstBuffer()
 	for(size_t i = 0; i < APP_BACK_BUFFER_COUNT; ++i)
 	{
 		m_pStagingConstBuffer[i] = D3D12::CreateCommittedResource(
-			m_renderBase.pDevice,
+			pDevice,
 			constBufferDesc,
 			uploadHeapProps,
 			D3D12_HEAP_FLAG_NONE,
@@ -762,7 +776,7 @@ bool SampleApp::prv_createConstBuffer()
 	};
 
 	// Create the descriptor heap for the vertex shader resource inputs.
-	m_pVertexShaderDescHeap = D3D12::CreateDescriptorHeap(m_renderBase.pDevice, vertexShaderDescHeapDesc);
+	m_pVertexShaderDescHeap = D3D12::CreateDescriptorHeap(pDevice, vertexShaderDescHeapDesc);
 	if(!m_pVertexShaderDescHeap)
 	{
 		return false;
@@ -775,7 +789,7 @@ bool SampleApp::prv_createConstBuffer()
 	};
 
 	// Create the constant buffer view for the vertex shader.
-	m_renderBase.pDevice->CreateConstantBufferView(&constBufferViewDesc, m_pVertexShaderDescHeap->GetCPUDescriptorHandleForHeapStart());
+	pDevice->CreateConstantBufferView(&constBufferViewDesc, m_pVertexShaderDescHeap->GetCPUDescriptorHandleForHeapStart());
 
 	return true;
 }

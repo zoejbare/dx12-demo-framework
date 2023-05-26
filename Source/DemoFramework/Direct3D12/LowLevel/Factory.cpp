@@ -15,49 +15,42 @@
 // CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
 // IN THE SOFTWARE.
 //
-#pragma once
+
+#include "Factory.hpp"
+
+#include "../../Application/Log.hpp"
 
 //---------------------------------------------------------------------------------------------------------------------
 
-#include "AppController.hpp"
-
-#include <DemoFramework/Application/AppView.hpp>
-#include <DemoFramework/Application/Window.hpp>
-
-//---------------------------------------------------------------------------------------------------------------------
-
-class CommonAppView
-	: public DemoFramework::IAppView
+DemoFramework::D3D12::FactoryPtr DemoFramework::D3D12::CreateFactory()
 {
-public:
+	typedef Microsoft::WRL::ComPtr<IDXGIFactory4> StagingFactoryPtr;
 
-	CommonAppView(const CommonAppView&) = delete;
-	CommonAppView(CommonAppView&&) = delete;
+	uint32_t flags = 0;
 
-	CommonAppView& operator =(const CommonAppView&) = delete;
-	CommonAppView& operator =(CommonAppView&&) = delete;
+#ifndef _DF_CONFIG_RELEASE
+	{
+		Microsoft::WRL::ComPtr<ID3D12Debug> pDebugInterface;
 
-	CommonAppView() = delete;
-	explicit CommonAppView(IAppController* pAppController);
-	virtual ~CommonAppView() {}
+		if(SUCCEEDED(D3D12GetDebugInterface(IID_PPV_ARGS(&pDebugInterface))))
+		{
+			pDebugInterface->EnableDebugLayer();
 
-	virtual bool Initialize() override;
-	virtual bool MainLoopUpdate() override;
-	virtual void Shutdown() override;
+			flags |= DXGI_CREATE_FACTORY_DEBUG;
+		}
+	}
+#endif
 
+	D3D12::FactoryPtr pOutput;
 
-protected:
+	const HRESULT result = CreateDXGIFactory2(flags, IID_PPV_ARGS(&pOutput));
+	if(result != S_OK)
+	{
+		LOG_ERROR("Failed to create factory; result='0x%08" PRIX32 "'", result);
+		return nullptr;
+	}
 
-	DemoFramework::Window* m_pWindow;
-	IAppController* m_pAppController;
-};
-
-//---------------------------------------------------------------------------------------------------------------------
-
-inline CommonAppView::CommonAppView(IAppController* pAppController)
-	: m_pWindow(nullptr)
-	, m_pAppController(pAppController)
-{
+	return pOutput;
 }
 
 //---------------------------------------------------------------------------------------------------------------------
