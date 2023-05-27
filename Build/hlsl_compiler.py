@@ -60,6 +60,8 @@ class HlslCompiler(
 		HasDebugLevel.__init__(self, projectSettings)
 		HasOptimizationLevel.__init__(self, projectSettings)
 
+		self._outputPath = None
+
 		self._defines = projectSettings.get("hlslDefines", ordered_set.OrderedSet())
 		self._includeDirectories = projectSettings.get("hlslIncludeDirectories", ordered_set.OrderedSet())
 
@@ -157,6 +159,13 @@ class HlslCompiler(
 		HasDebugLevel.SetupForProject(self, project)
 		HasOptimizationLevel.SetupForProject(self, project)
 
+		# Construct the output path.
+		self._outputPath = os.path.normpath(f"{project.outputDir}/shaders")
+
+		# Create the output path if it doesn't already exist.
+		if not os.access(self._outputPath, os.F_OK):
+			os.makedirs(self._outputPath)
+
 		# Reset the DXC path.
 		self._exePath = None
 
@@ -193,7 +202,7 @@ class HlslCompiler(
 
 	def _getOutputFiles(self, project, inputFile):
 		inputBaseName = os.path.basename(inputFile.filename)
-		outputPath = os.path.normpath(f"{project.outputDir}/{inputBaseName}")
+		outputPath = os.path.normpath(f"{self._outputPath}/{inputBaseName}")
 		outputFiles = [f"{outputPath}.bin"]
 
 		if self._debugLevel in [DebugLevel.ExternalSymbols, DebugLevel.ExternalSymbolsPlus]:
