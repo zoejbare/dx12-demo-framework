@@ -214,12 +214,12 @@ class HlslCompiler(
 		shaderType = None
 
 		# Determine the type of the input shader from it's file extension.
-		if inputFile.filename.endswith(".vertex.hlsl"):     shaderType = ShaderType.Vertex
-		elif inputFile.filename.endswith(".pixel.hlsl"):    shaderType = ShaderType.Pixel
-		elif inputFile.filename.endswith(".geometry.hlsl"): shaderType = ShaderType.Geometry
-		elif inputFile.filename.endswith(".hull.hlsl"):     shaderType = ShaderType.Hull
-		elif inputFile.filename.endswith(".domain.hlsl"):   shaderType = ShaderType.Domain
-		elif inputFile.filename.endswith(".compute.hlsl"):  shaderType = ShaderType.Compute
+		if inputFile.filename.endswith(".vs.hlsl"):     shaderType = ShaderType.Vertex
+		elif inputFile.filename.endswith(".ps.hlsl"):    shaderType = ShaderType.Pixel
+		elif inputFile.filename.endswith(".gs.hlsl"): shaderType = ShaderType.Geometry
+		elif inputFile.filename.endswith(".hs.hlsl"):     shaderType = ShaderType.Hull
+		elif inputFile.filename.endswith(".ds.hlsl"):   shaderType = ShaderType.Domain
+		elif inputFile.filename.endswith(".cs.hlsl"):  shaderType = ShaderType.Compute
 
 		assert shaderType is not None, \
 			f"Unknown shader type for file: {inputFile.filename}"

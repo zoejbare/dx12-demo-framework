@@ -333,13 +333,13 @@ bool SampleApp::prv_loadShaders()
 {
 	using namespace DemoFramework;
 
-	m_pVertexShader = D3D12::LoadShaderFromFile("shaders/basic.vertex.hlsl.bin");
+	m_pVertexShader = D3D12::LoadShaderFromFile("shaders/basic.vs.hlsl.bin");
 	if(!m_pVertexShader)
 	{
 		return false;
 	}
 
-	m_pPixelShader = D3D12::LoadShaderFromFile("shaders/basic.pixel.hlsl.bin");
+	m_pPixelShader = D3D12::LoadShaderFromFile("shaders/basic.ps.hlsl.bin");
 	if(!m_pPixelShader)
 	{
 		return false;
