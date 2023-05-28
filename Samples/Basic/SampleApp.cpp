@@ -235,7 +235,7 @@ void SampleApp::Render()
 
 	// Set the graphics pipeline state.
 	pCmdList->SetGraphicsRootSignature(m_pRootSignature.Get());
-	pCmdList->SetDescriptorHeaps(DF_ARRAY_LENGTH(pDescHeaps), pDescHeaps);
+	pCmdList->SetDescriptorHeaps(_countof(pDescHeaps), pDescHeaps);
 	pCmdList->SetGraphicsRootDescriptorTable(0, m_pVertexShaderDescHeap->GetGPUDescriptorHandleForHeapStart());
 	pCmdList->SetPipelineState(m_pGfxPipeline.Get());
 
@@ -373,7 +373,7 @@ bool SampleApp::prv_createGfxPipeline()
 	rootParam.DescriptorTable.NumDescriptorRanges = 1;
 	rootParam.DescriptorTable.pDescriptorRanges = &descRange;
 
-	const D3D12_ROOT_SIGNATURE_FLAGS rootSigFlags = D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT
+	constexpr D3D12_ROOT_SIGNATURE_FLAGS rootSigFlags = D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT
 		| D3D12_ROOT_SIGNATURE_FLAG_DENY_AMPLIFICATION_SHADER_ROOT_ACCESS
 		| D3D12_ROOT_SIGNATURE_FLAG_DENY_DOMAIN_SHADER_ROOT_ACCESS
 		| D3D12_ROOT_SIGNATURE_FLAG_DENY_GEOMETRY_SHADER_ROOT_ACCESS
@@ -409,9 +409,9 @@ bool SampleApp::prv_createGfxPipeline()
 		m_pPixelShader->GetBufferSize(),    // SIZE_T BytecodeLength
 	};
 
-	const D3D12_RENDER_TARGET_BLEND_DESC targetBlendState =
+	constexpr D3D12_RENDER_TARGET_BLEND_DESC targetBlendState =
 	{
-		false,                         // BOOL BlendEnable
+		false,                        // BOOL BlendEnable
 		false,                        // BOOL LogicOpEnable
 		D3D12_BLEND_SRC_ALPHA,        // D3D12_BLEND SrcBlend
 		D3D12_BLEND_INV_SRC_ALPHA,    // D3D12_BLEND DestBlend
@@ -423,21 +423,21 @@ bool SampleApp::prv_createGfxPipeline()
 		D3D12_COLOR_WRITE_ENABLE_ALL, // UINT8 RenderTargetWriteMask
 	};
 
-	const D3D12_BLEND_DESC blendState =
+	constexpr D3D12_BLEND_DESC blendState =
 	{
 		false,                // BOOL AlphaToCoverageEnable
 		false,                // BOOL IndependentBlendEnable
 		{ targetBlendState }, // D3D12_RENDER_TARGET_BLEND_DESC RenderTarget[ 8 ]
 	};
 
-	const D3D12_RASTERIZER_DESC rasterizerState =
+	constexpr D3D12_RASTERIZER_DESC rasterizerState =
 	{
 		D3D12_FILL_MODE_SOLID,                     // D3D12_FILL_MODE FillMode
 		D3D12_CULL_MODE_BACK,                      // D3D12_CULL_MODE CullMode
 		false,                                     // BOOL FrontCounterClockwise
-		0,                                         // INT DepthBias
-		0.0f,                                      // FLOAT DepthBiasClamp
-		0.0f,                                      // FLOAT SlopeScaledDepthBias
+		D3D12_DEFAULT_DEPTH_BIAS,                  // INT DepthBias
+		D3D12_DEFAULT_DEPTH_BIAS_CLAMP,            // FLOAT DepthBiasClamp
+		D3D12_DEFAULT_SLOPE_SCALED_DEPTH_BIAS,     // FLOAT SlopeScaledDepthBias
 		true,                                      // BOOL DepthClipEnable
 		false,                                     // BOOL MultisampleEnable
 		false,                                     // BOOL AntialiasedLineEnable
@@ -445,7 +445,7 @@ bool SampleApp::prv_createGfxPipeline()
 		D3D12_CONSERVATIVE_RASTERIZATION_MODE_OFF, // D3D12_CONSERVATIVE_RASTERIZATION_MODE ConservativeRaster
 	};
 
-	const D3D12_DEPTH_STENCIL_DESC depthStencilState =
+	constexpr D3D12_DEPTH_STENCIL_DESC depthStencilState =
 	{
 		true,                             // BOOL DepthEnable
 		D3D12_DEPTH_WRITE_MASK_ALL,       // D3D12_DEPTH_WRITE_MASK DepthWriteMask
@@ -457,7 +457,7 @@ bool SampleApp::prv_createGfxPipeline()
 		{},                               // D3D12_DEPTH_STENCILOP_DESC BackFace
 	};
 
-	const D3D12_INPUT_ELEMENT_DESC vertexPositionElement =
+	constexpr D3D12_INPUT_ELEMENT_DESC vertexPositionElement =
 	{
 		"POSITION",                                 // LPCSTR SemanticName
 		0,                                          // UINT SemanticIndex
@@ -468,7 +468,7 @@ bool SampleApp::prv_createGfxPipeline()
 		0,                                          // UINT InstanceDataStepRate
 	};
 
-	const D3D12_INPUT_ELEMENT_DESC vertexColorElement =
+	constexpr D3D12_INPUT_ELEMENT_DESC vertexColorElement =
 	{
 		"COLOR",                                    // LPCSTR SemanticName
 		0,                                          // UINT SemanticIndex
@@ -479,7 +479,7 @@ bool SampleApp::prv_createGfxPipeline()
 		0,                                          // UINT InstanceDataStepRate
 	};
 
-	const D3D12_INPUT_ELEMENT_DESC inputElements[] =
+	constexpr D3D12_INPUT_ELEMENT_DESC inputElements[] =
 	{
 		vertexPositionElement,
 		vertexColorElement,
@@ -487,8 +487,8 @@ bool SampleApp::prv_createGfxPipeline()
 
 	const D3D12_INPUT_LAYOUT_DESC inputLayout =
 	{
-		inputElements,                  // const D3D12_INPUT_ELEMENT_DESC *pInputElementDescs
-		DF_ARRAY_LENGTH(inputElements), // UINT NumElements
+		inputElements,           // const D3D12_INPUT_ELEMENT_DESC *pInputElementDescs
+		_countof(inputElements), // UINT NumElements
 	};
 
 	const D3D12_GRAPHICS_PIPELINE_STATE_DESC gfxPipelineDesc =
@@ -697,7 +697,7 @@ bool SampleApp::prv_createQuadGeometry()
 	// Before rendering begins, use a temporary command list to copy all static buffer data.
 	pTempCmdList->CopyResource(m_pQuadVertexBuffer.Get(), pStagingVertexBuffer.Get());
 	pTempCmdList->CopyResource(m_pQuadIndexBuffer.Get(), pStagingIndexBuffer.Get());
-	pTempCmdList->ResourceBarrier(DF_ARRAY_LENGTH(bufferBarriers), bufferBarriers);
+	pTempCmdList->ResourceBarrier(_countof(bufferBarriers), bufferBarriers);
 	pTempCmdList->Close();
 
 	ID3D12CommandList* pCmdLists[] =
