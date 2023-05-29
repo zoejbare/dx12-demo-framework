@@ -72,13 +72,13 @@ public:
 	virtual void OnWindowMouseMove(Window*, int32_t /*previousX*/, int32_t /*previousY*/) = 0;
 
 	//! Event fired when the mouse wheel has moved within the window client area.
-	virtual void OnWindowMouseWheel(Window*, float32_t) = 0;
+	virtual void OnWindowMouseWheel(Window*, float32_t /*wheelDelta*/) = 0;
 
 	//! Event fired when a mouse button has been pressed within the window client area.
-	virtual void OnWindowMouseButtonPressed(Window*, MouseButton) = 0;
+	virtual void OnWindowMouseButtonPressed(Window*, MouseButton /*button*/) = 0;
 
 	//! Event fired when a mouse button has been released.
-	virtual void OnWindowMouseButtonReleased(Window*, MouseButton) = 0;
+	virtual void OnWindowMouseButtonReleased(Window*, MouseButton /*button*/) = 0;
 };
 
 //---------------------------------------------------------------------------------------------------------------------
@@ -96,9 +96,9 @@ public:
 	virtual void OnWindowGainedFocus(Window*) override {}
 	virtual void OnWindowLostFocus(Window*) override {}
 	virtual void OnWindowMouseMove(Window*, int32_t /*previousX*/, int32_t /*previousY*/) override {}
-	virtual void OnWindowMouseWheel(Window*, float32_t) override {}
-	virtual void OnWindowMouseButtonPressed(Window*, MouseButton) override {}
-	virtual void OnWindowMouseButtonReleased(Window*, MouseButton) override {}
+	virtual void OnWindowMouseWheel(Window*, float32_t /*wheelDelta*/) override {}
+	virtual void OnWindowMouseButtonPressed(Window*, MouseButton /*button*/) override {}
+	virtual void OnWindowMouseButtonReleased(Window*, MouseButton /*button*/) override {}
 };
 
 //---------------------------------------------------------------------------------------------------------------------
