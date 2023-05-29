@@ -25,6 +25,7 @@
 
 //---------------------------------------------------------------------------------------------------------------------
 
+#define GUI_NAME_BUFFER_SIZE      64
 #define GUI_TIME_SAMPLE_MAX_COUNT 100
 #define GUI_PLOT_SAMPLE_MAX_COUNT 60
 
@@ -53,7 +54,7 @@ public:
 	Gui& operator =(const Gui&) = delete;
 	Gui& operator =(Gui&&) = delete;
 
-	bool Initialize(const DevicePtr& pDevice, uint32_t bufferCount, DXGI_FORMAT renderTargetFormat);
+	bool Initialize(const DevicePtr& pDevice, const char* demoName, uint32_t bufferCount, DXGI_FORMAT renderTargetFormat);
 	void Update(float64_t deltaTime, CustomGuiDrawFn customGuiDraw = nullptr);
 	void Render(const GraphicsCommandListPtr& pCmdList);
 
@@ -88,6 +89,8 @@ private:
 		size_t offset;
 	};
 
+	char m_demoName[GUI_NAME_BUFFER_SIZE];
+
 	FrameTimePlot m_frameTimePlot;
 	DeltaTime m_deltaTime;
 
@@ -103,7 +106,8 @@ private:
 //---------------------------------------------------------------------------------------------------------------------
 
 inline DemoFramework::D3D12::Gui::Gui()
-	: m_frameTimePlot()
+	: m_demoName()
+	, m_frameTimePlot()
 	, m_deltaTime()
 	, m_pFontSrvHeap()
 	, m_pGuiContext(nullptr)

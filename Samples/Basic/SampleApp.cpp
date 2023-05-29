@@ -909,7 +909,7 @@ bool SampleApp::prv_initGui()
 	LOG_WRITE("Initializing GUI resources ...");
 
 	// Initialize the on-screen GUI.
-	if(!m_pGui->Initialize(m_pRenderBase->GetDevice(), APP_BACK_BUFFER_COUNT, APP_BACK_BUFFER_FORMAT))
+	if(!m_pGui->Initialize(m_pRenderBase->GetDevice(), APP_NAME, APP_BACK_BUFFER_COUNT, APP_BACK_BUFFER_FORMAT))
 	{
 		return false;
 	}

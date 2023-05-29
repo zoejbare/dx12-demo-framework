@@ -62,9 +62,18 @@ DemoFramework::D3D12::Gui::~Gui()
 
 //---------------------------------------------------------------------------------------------------------------------
 
-bool DemoFramework::D3D12::Gui::Initialize(const DevicePtr& pDevice, const uint32_t bufferCount, const DXGI_FORMAT renderTargetFormat)
+bool DemoFramework::D3D12::Gui::Initialize(
+	const DevicePtr& pDevice,
+	const char* const demoName,
+	const uint32_t bufferCount,
+	const DXGI_FORMAT renderTargetFormat)
 {
-	if(!pDevice || bufferCount == 0 || bufferCount > DF_SWAP_CHAIN_BUFFER_MAX_COUNT || renderTargetFormat == DXGI_FORMAT_UNKNOWN)
+	if(!pDevice
+		|| !demoName
+		|| demoName[0] == '\0'
+		|| bufferCount == 0
+		|| bufferCount > DF_SWAP_CHAIN_BUFFER_MAX_COUNT
+		|| renderTargetFormat == DXGI_FORMAT_UNKNOWN)
 	{
 		LOG_ERROR("Invalid parameter");
 		return false;
@@ -131,6 +140,8 @@ bool DemoFramework::D3D12::Gui::Initialize(const DevicePtr& pDevice, const uint3
 		m_pFontSrvHeap.Get(),
 		m_pFontSrvHeap->GetCPUDescriptorHandleForHeapStart(),
 		m_pFontSrvHeap->GetGPUDescriptorHandleForHeapStart());
+
+	snprintf(m_demoName, GUI_NAME_BUFFER_SIZE, "%s", demoName);
 
 	return true;
 }
@@ -233,6 +244,10 @@ void DemoFramework::D3D12::Gui::Update(const float64_t deltaTime, CustomGuiDrawF
 			const float64_t upTimeSeconds = fmod(m_totalTime, 60.0);
 			const float64_t upTimeMinutes = floor(fmod(m_totalTime * minuteConv, 60.0));
 			const float64_t upTimeHours = floor(m_totalTime * hourConv);
+
+			ImGui::Text(m_demoName);
+			ImGui::Separator();
+			ImGui::Spacing();
 
 			ImGui::Text("Up time: %0.0f:%02.0f:%06.3f", upTimeHours, upTimeMinutes, upTimeSeconds);
             ImGui::Text("Delta:   %.3f ms (%.1f FPS)", deltaTimeMs, fps);
