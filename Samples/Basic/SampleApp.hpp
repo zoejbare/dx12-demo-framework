@@ -22,7 +22,9 @@
 #include "../Common/AppController.hpp"
 
 #include <DemoFramework/Application/FrameTimer.hpp>
+
 #include <DemoFramework/Direct3D12/RenderBase.hpp>
+#include <DemoFramework/Direct3D12/Gui.hpp>
 
 #include <DirectXMath.h>
 
@@ -48,6 +50,10 @@ public:
 	virtual void Shutdown() override;
 
 	virtual void OnWindowResized(DemoFramework::Window*, uint32_t /*previousWidth*/, uint32_t /*previousHeight*/) override;
+	virtual void OnWindowMouseMove(DemoFramework::Window*, int32_t /*previousX*/, int32_t /*previousY*/) override;
+	virtual void OnWindowMouseWheel(DemoFramework::Window*, float32_t /*wheelDelta*/) override;
+	virtual void OnWindowMouseButtonPressed(DemoFramework::Window*, DemoFramework::MouseButton /*button*/) override;
+	virtual void OnWindowMouseButtonReleased(DemoFramework::Window*, DemoFramework::MouseButton /*button*/) override;
 
 	virtual const char* GetAppName() const override;
 	virtual const char* GetLogFilename() const override;
@@ -57,12 +63,14 @@ private:
 
 	bool prv_loadShaders();
 	bool prv_createGfxPipeline();
-	bool prv_createQuadGeometry();
+	bool prv_createQuadGeometry(const DemoFramework::D3D12::CommandAllocatorPtr&, const DemoFramework::D3D12::GraphicsCommandListPtr&);
 	bool prv_createConstBuffer();
+	bool prv_initGui();
 
 	DemoFramework::Window* m_pWindow;
 
 	DemoFramework::D3D12::RenderBase* m_pRenderBase;
+	DemoFramework::D3D12::Gui* m_pGui;
 
 	DemoFramework::D3D12::RootSignaturePtr m_pRootSignature;
 	DemoFramework::D3D12::PipelineStatePtr m_pGfxPipeline;
@@ -92,6 +100,7 @@ private:
 inline SampleApp::SampleApp()
 	: m_pWindow()
 	, m_pRenderBase(nullptr)
+	, m_pGui(nullptr)
 	, m_pRootSignature()
 	, m_pGfxPipeline()
 	, m_pVertexShaderDescHeap()

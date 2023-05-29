@@ -105,9 +105,29 @@ bool SampleApp::Initialize(DemoFramework::Window* const pWindow)
 	const uint32_t clientHeight = m_pWindow->GetClientHeight();
 
 	m_pRenderBase = new D3D12::RenderBase();
+	assert(m_pRenderBase != nullptr);
+
+	m_pGui = new D3D12::Gui();
+	assert(m_pGui != nullptr);
 
 	// Initialize the common rendering resources.
 	if(!m_pRenderBase->Initialize(hWnd, clientWidth, clientHeight, APP_BACK_BUFFER_COUNT, APP_BACK_BUFFER_FORMAT, APP_DEPTH_BUFFER_FORMAT))
+	{
+		return false;
+	}
+
+	const D3D12::DevicePtr& pDevice = m_pRenderBase->GetDevice();
+
+	// Create the staging command allocator.
+	D3D12::CommandAllocatorPtr pStagingCmdAlloc = D3D12::CreateCommandAllocator(pDevice, D3D12_COMMAND_LIST_TYPE_DIRECT);
+	if(!pStagingCmdAlloc)
+	{
+		return false;
+	}
+
+	// Create the staging command list.
+	D3D12::GraphicsCommandListPtr pStagingCmdList = D3D12::CreateGraphicsCommandList(pDevice, pStagingCmdAlloc, D3D12_COMMAND_LIST_TYPE_DIRECT, 0);
+	if(!pStagingCmdList)
 	{
 		return false;
 	}
@@ -125,7 +145,7 @@ bool SampleApp::Initialize(DemoFramework::Window* const pWindow)
 	}
 
 	// Initialize the geometry resources.
-	if(!prv_createQuadGeometry())
+	if(!prv_createQuadGeometry(pStagingCmdAlloc, pStagingCmdList))
 	{
 		return false;
 	}
@@ -135,6 +155,15 @@ bool SampleApp::Initialize(DemoFramework::Window* const pWindow)
 	{
 		return false;
 	}
+
+	// Initialize the GUI.
+	if(!prv_initGui())
+	{
+		return false;
+	}
+
+	// Set the size of the GUI display area.
+	m_pGui->SetDisplaySize(pWindow->GetClientWidth(), pWindow->GetClientHeight());
 
 	return true;
 }
@@ -175,6 +204,8 @@ bool SampleApp::Update()
 	{
 		rotation -= M_TAU;
 	}
+
+	m_pGui->Update(m_frameTimer.GetDeltaTime());
 
 	return true;
 }
@@ -283,6 +314,9 @@ void SampleApp::Render()
 	// Draw the bound geometry.
 	pCmdList->DrawIndexedInstanced(6, 1, 0, 0, 0);
 
+	// Draw the GUI.
+	m_pGui->Render(m_pRenderBase->GetCmdList());
+
 	m_pRenderBase->EndFrame(true);
 }
 
@@ -290,6 +324,9 @@ void SampleApp::Render()
 
 void SampleApp::Shutdown()
 {
+	// Clean up the GUI.
+	delete m_pGui;
+
 	// Clean up the application render resources.
 	m_pRootSignature.Reset();
 	m_pGfxPipeline.Reset();
@@ -310,7 +347,82 @@ void SampleApp::OnWindowResized(DemoFramework::Window* const pWindow, const uint
 	DF_UNUSED(previousWidth);
 	DF_UNUSED(previousHeight);
 
+	m_pGui->SetDisplaySize(pWindow->GetClientWidth(), pWindow->GetClientHeight());
+
 	m_resizeSwapChain = true;
+}
+
+//---------------------------------------------------------------------------------------------------------------------
+
+void SampleApp::OnWindowMouseMove(DemoFramework::Window* const pWindow, const int32_t previousX, const int32_t previousY)
+{
+	DF_UNUSED(pWindow);
+	DF_UNUSED(previousX);
+	DF_UNUSED(previousY);
+
+	m_pGui->SetMousePosition(pWindow->GetMouseX(), pWindow->GetMouseY());
+}
+
+//---------------------------------------------------------------------------------------------------------------------
+
+void SampleApp::OnWindowMouseWheel(DemoFramework::Window* const pWindow, const float32_t wheelDelta)
+{
+	DF_UNUSED(pWindow);
+	DF_UNUSED(wheelDelta);
+
+	m_pGui->SetMouseWheelDelta(wheelDelta);
+}
+
+//---------------------------------------------------------------------------------------------------------------------
+
+void SampleApp::OnWindowMouseButtonPressed(DemoFramework::Window* const pWindow, const DemoFramework::MouseButton button)
+{
+	DF_UNUSED(pWindow);
+	DF_UNUSED(button);
+
+	using namespace DemoFramework;
+
+	uint32_t buttonIndex = UINT_MAX;
+	switch(button)
+	{
+		case MouseButton::Left:   buttonIndex = 0; break;
+		case MouseButton::Right:  buttonIndex = 1; break;
+		case MouseButton::Middle: buttonIndex = 2; break;
+		case MouseButton::X1:     buttonIndex = 3; break;
+		case MouseButton::X2:     buttonIndex = 4; break;
+
+		default:
+			assert(false);
+			break;
+	}
+
+	m_pGui->SetMouseButtonState(buttonIndex, true);
+}
+
+//---------------------------------------------------------------------------------------------------------------------
+
+void SampleApp::OnWindowMouseButtonReleased(DemoFramework::Window* const pWindow, const DemoFramework::MouseButton button)
+{
+	DF_UNUSED(pWindow);
+	DF_UNUSED(button);
+
+	using namespace DemoFramework;
+
+	uint32_t buttonIndex = UINT_MAX;
+	switch(button)
+	{
+		case MouseButton::Left:   buttonIndex = 0; break;
+		case MouseButton::Right:  buttonIndex = 1; break;
+		case MouseButton::Middle: buttonIndex = 2; break;
+		case MouseButton::X1:     buttonIndex = 3; break;
+		case MouseButton::X2:     buttonIndex = 4; break;
+
+		default:
+			assert(false);
+			break;
+	}
+
+	m_pGui->SetMouseButtonState(buttonIndex, false);
 }
 
 //---------------------------------------------------------------------------------------------------------------------
@@ -528,12 +640,13 @@ bool SampleApp::prv_createGfxPipeline()
 
 //---------------------------------------------------------------------------------------------------------------------
 
-bool SampleApp::prv_createQuadGeometry()
+bool SampleApp::prv_createQuadGeometry(
+	const DemoFramework::D3D12::CommandAllocatorPtr& pStagingCmdAlloc,
+	const DemoFramework::D3D12::GraphicsCommandListPtr& pStagingCmdList)
 {
 	using namespace DemoFramework;
 
 	const D3D12::DevicePtr& pDevice = m_pRenderBase->GetDevice();
-	const D3D12::CommandQueuePtr& pCmdQueue = m_pRenderBase->GetCmdQueue();
 
 	// Construct the geometry for a quad
 	const Vertex triangleVertices[] =
@@ -651,27 +764,6 @@ bool SampleApp::prv_createQuadGeometry()
 	memcpy(pStagingIndexData, triangleIndices, sizeof(triangleIndices));
 	pStagingIndexBuffer->Unmap(0, nullptr);
 
-	// Create the staging command synchronization primitive so we don't kill resources while they're currently in use.
-	D3D12::Sync tempCmdSync;
-	if(!tempCmdSync.Initialize(pDevice, D3D12_FENCE_FLAG_NONE))
-	{
-		return false;
-	}
-
-	// Create the staging command allocator.
-	D3D12::CommandAllocatorPtr pTempCmdAlloc = D3D12::CreateCommandAllocator(pDevice, D3D12_COMMAND_LIST_TYPE_DIRECT);
-	if(!pTempCmdAlloc)
-	{
-		return false;
-	}
-
-	// Create the staging command list.
-	D3D12::GraphicsCommandListPtr pTempCmdList = D3D12::CreateGraphicsCommandList(pDevice, pTempCmdAlloc, D3D12_COMMAND_LIST_TYPE_DIRECT, 0);
-	if(!pTempCmdList)
-	{
-		return false;
-	}
-
 	D3D12_RESOURCE_BARRIER vertexBufferBarrier, indexBufferBarrier;
 
 	vertexBufferBarrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
@@ -694,23 +786,37 @@ bool SampleApp::prv_createQuadGeometry()
 		indexBufferBarrier,
 	};
 
+	// Create the staging command synchronization primitive so we can wait for
+	// all staging resource copies to complete at the end of initialization.
+	D3D12::Sync stagingCmdSync;
+	if(!stagingCmdSync.Initialize(pDevice, D3D12_FENCE_FLAG_NONE))
+	{
+		return false;
+	}
+
 	// Before rendering begins, use a temporary command list to copy all static buffer data.
-	pTempCmdList->CopyResource(m_pQuadVertexBuffer.Get(), pStagingVertexBuffer.Get());
-	pTempCmdList->CopyResource(m_pQuadIndexBuffer.Get(), pStagingIndexBuffer.Get());
-	pTempCmdList->ResourceBarrier(_countof(bufferBarriers), bufferBarriers);
-	pTempCmdList->Close();
+	pStagingCmdList->CopyResource(m_pQuadVertexBuffer.Get(), pStagingVertexBuffer.Get());
+	pStagingCmdList->CopyResource(m_pQuadIndexBuffer.Get(), pStagingIndexBuffer.Get());
+	pStagingCmdList->ResourceBarrier(_countof(bufferBarriers), bufferBarriers);
 
 	ID3D12CommandList* pCmdLists[] =
 	{
-		pTempCmdList.Get(),
+		pStagingCmdList.Get(),
 	};
 
-	// Begin executing the staging command list.
+	const D3D12::CommandQueuePtr& pCmdQueue = m_pRenderBase->GetCmdQueue();
+
+	// Stop recording commands in the staging command list and begin executing it.
+	pStagingCmdList->Close();
 	pCmdQueue->ExecuteCommandLists(1, pCmdLists);
 
-	// Add a synchronization signal after the staging command list, then wait for it.
-	tempCmdSync.Signal(pCmdQueue);
-	tempCmdSync.Wait();
+	// Wait for the staging command list to finish executing.
+	stagingCmdSync.Signal(pCmdQueue);
+	stagingCmdSync.Wait();
+
+	// Reset the command list so it can be used again.
+	pStagingCmdAlloc->Reset();
+	pStagingCmdList->Reset(pStagingCmdAlloc.Get(), nullptr);
 
 	return true;
 }
@@ -790,6 +896,23 @@ bool SampleApp::prv_createConstBuffer()
 
 	// Create the constant buffer view for the vertex shader.
 	pDevice->CreateConstantBufferView(&constBufferViewDesc, m_pVertexShaderDescHeap->GetCPUDescriptorHandleForHeapStart());
+
+	return true;
+}
+
+//---------------------------------------------------------------------------------------------------------------------
+
+bool SampleApp::prv_initGui()
+{
+	using namespace DemoFramework;
+
+	LOG_WRITE("Initializing GUI resources ...");
+
+	// Initialize the on-screen GUI.
+	if(!m_pGui->Initialize(m_pRenderBase->GetDevice(), APP_BACK_BUFFER_COUNT, APP_BACK_BUFFER_FORMAT))
+	{
+		return false;
+	}
 
 	return true;
 }

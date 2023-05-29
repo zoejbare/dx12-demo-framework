@@ -234,8 +234,12 @@ class LibDemoFramework(object):
 	projectName = "DemoFramework"
 	outputName = "libdf"
 	sourcePath = f"{_REPO_ROOT_PATH}/Source"
+	dependencies = [
+		ExtLibImgui.projectName,
+		ExtLibImplot.projectName,
+	]
 
-with csbuild.Project(LibDemoFramework.projectName, LibDemoFramework.sourcePath):
+with csbuild.Project(LibDemoFramework.projectName, LibDemoFramework.sourcePath, LibDemoFramework.dependencies):
 	csbuild.SetOutput(LibDemoFramework.outputName, csbuild.ProjectType.SharedLibrary)
 	csbuild.SetSupportedPlatforms("Windows")
 
