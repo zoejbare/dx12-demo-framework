@@ -20,6 +20,15 @@
 
 //---------------------------------------------------------------------------------------------------------------------
 
+void DemoFramework::FrameTimer::Initialize()
+{
+	// Initialize the counter frequency and previous timestamp to kick things off.
+	QueryPerformanceFrequency(&m_frequency);
+	QueryPerformanceCounter(&m_previousTime);
+}
+
+//---------------------------------------------------------------------------------------------------------------------
+
 void DemoFramework::FrameTimer::Update()
 {
 	const float64_t desiredDeltaTime = m_lockFrameRate

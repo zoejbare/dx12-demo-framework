@@ -44,7 +44,7 @@ class DF_API DemoFramework::D3D12::Gui
 {
 public:
 
-	typedef std::function<void()> CustomGuiDrawFn;
+	typedef std::function<void(ImGuiContext*)> CustomGuiDrawFn;
 
 	Gui();
 	Gui(const Gui&) = delete;

@@ -189,7 +189,7 @@ void DemoFramework::D3D12::Gui::Update(const float64_t deltaTime, CustomGuiDrawF
 			m_deltaTime.avg = totalDeltaAccum / float64_t(m_deltaTime.count);
 			m_updateTimer -= updateInterval;
 
-			if(m_totalTime > 2.0)
+			if(m_totalTime > 1.5)
 			{
 				FrameTimePlotData plotData;
 				plotData.time = m_totalTime;
@@ -289,7 +289,7 @@ void DemoFramework::D3D12::Gui::Update(const float64_t deltaTime, CustomGuiDrawF
 		// Do any custom GUI work needed by the calling application.
 		if(customGuiDraw)
 		{
-			customGuiDraw();
+			customGuiDraw(m_pGuiContext);
 		}
 
 		// Reset the mouse wheel delta.

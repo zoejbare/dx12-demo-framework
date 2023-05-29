@@ -31,6 +31,8 @@
 #include <DemoFramework/Direct3D12/Shader.hpp>
 #include <DemoFramework/Direct3D12/Sync.hpp>
 
+#include <imgui.h>
+
 #include <math.h>
 
 //---------------------------------------------------------------------------------------------------------------------
@@ -165,6 +167,10 @@ bool SampleApp::Initialize(DemoFramework::Window* const pWindow)
 	// Set the size of the GUI display area.
 	m_pGui->SetDisplaySize(pWindow->GetClientWidth(), pWindow->GetClientHeight());
 
+	// Initialize the frame timer at the end so the initial timestamp is not
+	// influenced by the time it takes to create the application resources.
+	m_frameTimer.Initialize();
+
 	return true;
 }
 
@@ -205,7 +211,16 @@ bool SampleApp::Update()
 		rotation -= M_TAU;
 	}
 
-	m_pGui->Update(m_frameTimer.GetDeltaTime());
+	m_pGui->Update(
+		m_frameTimer.GetDeltaTime(),
+		[](ImGuiContext* const pGuiContext)
+		{
+			// Always set the ImGui context before calling any other ImGui functions.
+			ImGui::SetCurrentContext(pGuiContext);
+
+			// Do custom GUI drawing code here.
+		}
+	);
 
 	return true;
 }

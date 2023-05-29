@@ -36,6 +36,7 @@ public:
 
 	FrameTimer();
 
+	void Initialize();
 	void Update();
 
 	float64_t GetDeltaTime() const;
@@ -72,8 +73,6 @@ inline DemoFramework::FrameTimer::FrameTimer()
 	, m_previousTime()
 	, m_lockFrameRate(true)
 {
-	QueryPerformanceFrequency(&m_frequency);
-	QueryPerformanceCounter(&m_previousTime);
 }
 
 //---------------------------------------------------------------------------------------------------------------------
