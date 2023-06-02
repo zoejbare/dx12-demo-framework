@@ -20,7 +20,7 @@
 //---------------------------------------------------------------------------------------------------------------------
 
 #include "BackBuffer.hpp"
-#include "Sync.hpp"
+#include "CommandContext.hpp"
 
 #include <memory>
 
@@ -61,9 +61,10 @@ public:
 
 	const DevicePtr& GetDevice() const;
 	const CommandQueuePtr& GetCmdQueue() const;
-	const CommandAllocatorPtr& GetCmdAlloc() const;
-	const GraphicsCommandListPtr& GetCmdList() const;
 	const SwapChainPtr& GetSwapChain() const;
+
+	GraphicsCommandContext& GetUploadContext();
+	GraphicsCommandContext& GetDrawContext();
 
 	uint32_t GetBufferIndex() const;
 	uint32_t GetBufferCount() const;
@@ -73,16 +74,24 @@ public:
 
 private:
 
-	DevicePtr m_pDevice;
-	CommandQueuePtr m_pCmdQueue;
-	CommandAllocatorPtr m_pCmdAlloc[DF_SWAP_CHAIN_BUFFER_MAX_COUNT];
-	GraphicsCommandListPtr m_pCmdList[DF_SWAP_CHAIN_BUFFER_MAX_COUNT];
-	SwapChainPtr m_pSwapChain;
-	DescriptorHeapPtr m_pDepthDescHeap;
-	ResourcePtr m_pDepthBuffer;
+	void prv_waitForFrame(uint32_t);
+
+	DevicePtr m_device;
+	CommandQueuePtr m_cmdQueue;
+	SwapChainPtr m_swapChain;
+	DescriptorHeapPtr m_depthDescHeap;
+	ResourcePtr m_depthBuffer;
+
+	FencePtr m_drawFence;
+	EventPtr m_drawEvent;
+
+	GraphicsCommandContext m_uploadContext;
+	GraphicsCommandContext m_drawContext[DF_SWAP_CHAIN_BUFFER_MAX_COUNT];
 
 	BackBuffer m_backBuffer;
-	Sync m_sync[DF_SWAP_CHAIN_BUFFER_MAX_COUNT];
+
+	uint64_t m_fenceMarker[DF_SWAP_CHAIN_BUFFER_MAX_COUNT];
+	uint64_t m_nextFenceMarker;
 
 	uint32_t m_bufferCount;
 	uint32_t m_bufferIndex;
@@ -99,15 +108,18 @@ private:
 //---------------------------------------------------------------------------------------------------------------------
 
 inline DemoFramework::D3D12::RenderBase::RenderBase()
-	: m_pDevice()
-	, m_pCmdQueue()
-	, m_pCmdAlloc()
-	, m_pCmdList()
-	, m_pSwapChain()
-	, m_pDepthDescHeap()
-	, m_pDepthBuffer()
+	: m_device()
+	, m_cmdQueue()
+	, m_swapChain()
+	, m_depthDescHeap()
+	, m_depthBuffer()
+	, m_drawFence()
+	, m_drawEvent()
+	, m_uploadContext()
+	, m_drawContext()
 	, m_backBuffer()
-	, m_sync()
+	, m_fenceMarker()
+	, m_nextFenceMarker(0)
 	, m_bufferCount(0)
 	, m_bufferIndex(0)
 	, m_swapChainFlags(0)
@@ -123,52 +135,45 @@ inline DemoFramework::D3D12::RenderBase::RenderBase()
 inline DemoFramework::D3D12::RenderBase::~RenderBase()
 {
 	// Flush each command list before shutting down.
-	for(size_t i = 0; i < m_bufferCount; ++i)
+	for(uint32_t i = 0; i < m_bufferCount; ++i)
 	{
-		m_sync[i].Wait();
-
-		m_pCmdAlloc[i].Reset();
-		m_pCmdList[i].Reset();
+		prv_waitForFrame(i);
 	}
-
-	m_pSwapChain.Reset();
-	m_pCmdQueue.Reset();
-	m_pDevice.Reset();
 }
 
 //---------------------------------------------------------------------------------------------------------------------
 
 inline const DemoFramework::D3D12::DevicePtr& DemoFramework::D3D12::RenderBase::GetDevice() const
 {
-	return m_pDevice;
+	return m_device;
 }
 
 //---------------------------------------------------------------------------------------------------------------------
 
 inline const DemoFramework::D3D12::CommandQueuePtr& DemoFramework::D3D12::RenderBase::GetCmdQueue() const
 {
-	return m_pCmdQueue;
+	return m_cmdQueue;
 }
 
 //---------------------------------------------------------------------------------------------------------------------
 
-inline const DemoFramework::D3D12::CommandAllocatorPtr& DemoFramework::D3D12::RenderBase::GetCmdAlloc() const
+inline DemoFramework::D3D12::GraphicsCommandContext& DemoFramework::D3D12::RenderBase::GetUploadContext()
 {
-	return m_pCmdAlloc[m_bufferIndex];
+	return m_uploadContext;
 }
 
 //---------------------------------------------------------------------------------------------------------------------
 
-inline const DemoFramework::D3D12::GraphicsCommandListPtr& DemoFramework::D3D12::RenderBase::GetCmdList() const
+inline DemoFramework::D3D12::GraphicsCommandContext& DemoFramework::D3D12::RenderBase::GetDrawContext()
 {
-	return m_pCmdList[m_bufferIndex];
+	return m_drawContext[m_bufferIndex];
 }
 
 //---------------------------------------------------------------------------------------------------------------------
 
 inline const DemoFramework::D3D12::SwapChainPtr& DemoFramework::D3D12::RenderBase::GetSwapChain() const
 {
-	return m_pSwapChain;
+	return m_swapChain;
 }
 
 //---------------------------------------------------------------------------------------------------------------------

@@ -25,7 +25,9 @@
 #include "LowLevel/CommandQueue.hpp"
 #include "LowLevel/DescriptorHeap.hpp"
 #include "LowLevel/Device.hpp"
+#include "LowLevel/Event.hpp"
 #include "LowLevel/Factory.hpp"
+#include "LowLevel/Fence.hpp"
 #include "LowLevel/GraphicsCommandList.hpp"
 #include "LowLevel/Resource.hpp"
 #include "LowLevel/SwapChain.hpp"
@@ -111,8 +113,8 @@ bool DemoFramework::D3D12::RenderBase::Initialize(
 	}
 
 	// Create the D3D12 device.
-	m_pDevice = D3D12::CreateDevice(pAdapter);
-	if(!m_pDevice)
+	m_device = D3D12::CreateDevice(pAdapter);
+	if(!m_device)
 	{
 		return false;
 	}
@@ -122,7 +124,7 @@ bool DemoFramework::D3D12::RenderBase::Initialize(
 		D3D12_FEATURE_DATA_ROOT_SIGNATURE feature;
 		feature.HighestVersion = D3D_ROOT_SIGNATURE_VERSION_1_1;
 
-		if(FAILED(m_pDevice->CheckFeatureSupport(D3D12_FEATURE_ROOT_SIGNATURE, &feature, sizeof(feature))))
+		if(FAILED(m_device->CheckFeatureSupport(D3D12_FEATURE_ROOT_SIGNATURE, &feature, sizeof(feature))))
 		{
 			feature.HighestVersion = D3D_ROOT_SIGNATURE_VERSION_1_0;
 		}
@@ -139,8 +141,8 @@ bool DemoFramework::D3D12::RenderBase::Initialize(
 	};
 
 	// Create a command queue.
-	m_pCmdQueue = D3D12::CreateCommandQueue(m_pDevice, cmdQueueDesc);
-	if(!m_pCmdQueue)
+	m_cmdQueue = D3D12::CreateCommandQueue(m_device, cmdQueueDesc);
+	if(!m_cmdQueue)
 	{
 		return false;
 	}
@@ -154,8 +156,8 @@ bool DemoFramework::D3D12::RenderBase::Initialize(
 	};
 
 	// Create the descriptor heap for the depth buffer.
-	m_pDepthDescHeap = D3D12::CreateDescriptorHeap(m_pDevice, depthDescHeapDesc);
-	if(!m_pDepthDescHeap)
+	m_depthDescHeap = D3D12::CreateDescriptorHeap(m_device, depthDescHeapDesc);
+	if(!m_depthDescHeap)
 	{
 		return false;
 	}
@@ -182,14 +184,34 @@ bool DemoFramework::D3D12::RenderBase::Initialize(
 	};
 
 	// Create a swap chain for the window.
-	m_pSwapChain = D3D12::CreateSwapChain(pFactory, m_pCmdQueue, swapChainDesc, hWnd);
-	if(!m_pSwapChain)
+	m_swapChain = D3D12::CreateSwapChain(pFactory, m_cmdQueue, swapChainDesc, hWnd);
+	if(!m_swapChain)
+	{
+		return false;
+	}
+
+	// Create the frame draw fence.
+	m_drawFence = D3D12::CreateFence(m_device, D3D12_FENCE_FLAG_NONE, 0);
+	if(!m_drawFence)
+	{
+		return false;
+	}
+
+	// Create the frame draw event.
+	m_drawEvent = D3D12::CreateEvent(nullptr, false, false, nullptr);
+	if(!m_drawEvent)
 	{
 		return false;
 	}
 
 	// Get render target views for each back buffer in the swap chain.
-	if(!m_backBuffer.Initialize(m_pDevice, m_pSwapChain, D3D12_DESCRIPTOR_HEAP_FLAG_NONE, 0))
+	if(!m_backBuffer.Initialize(m_device, m_swapChain, D3D12_DESCRIPTOR_HEAP_FLAG_NONE, 0))
+	{
+		return false;
+	}
+
+	// Initialize the upload context.
+	if(!m_uploadContext.Initialize(m_device, D3D12_COMMAND_LIST_TYPE_DIRECT))
 	{
 		return false;
 	}
@@ -197,31 +219,19 @@ bool DemoFramework::D3D12::RenderBase::Initialize(
 	// Create per-frame resources.
 	for(size_t bufferIndex = 0; bufferIndex < backBufferCount; ++bufferIndex)
 	{
-		// Create a command allocator.
-		m_pCmdAlloc[bufferIndex] = D3D12::CreateCommandAllocator(m_pDevice, D3D12_COMMAND_LIST_TYPE_DIRECT);
-		if(!m_pCmdAlloc[bufferIndex])
+		// Initialize the draw context for the current buffer.
+		if(!m_drawContext[bufferIndex].Initialize(m_device, D3D12_COMMAND_LIST_TYPE_DIRECT))
 		{
 			return false;
 		}
 
-		// Create a command list.
-		m_pCmdList[bufferIndex] = D3D12::CreateGraphicsCommandList(m_pDevice, m_pCmdAlloc[bufferIndex], D3D12_COMMAND_LIST_TYPE_DIRECT, 0);
-		if(!m_pCmdList[bufferIndex])
-		{
-			return false;
-		}
-
-		// Command lists start in the recording state, so for consistency, we'll close them after they're created.
-		m_pCmdList[bufferIndex]->Close();
-
-		// Initialize the synchronization primitive used for signaling
-		// the end of command list processing for a given back buffer.
-		if(!m_sync[bufferIndex].Initialize(m_pDevice, D3D12_FENCE_FLAG_NONE))
-		{
-			return false;
-		}
+		m_fenceMarker[0] = 0;
 	}
 
+	// Reset the upload context so it's immediately ready to use.
+	m_uploadContext.Reset();
+
+	m_nextFenceMarker = m_fenceMarker[0] + 1;
 	m_initialized = true;
 
 	return true;
@@ -231,10 +241,10 @@ bool DemoFramework::D3D12::RenderBase::Initialize(
 
 void DemoFramework::D3D12::RenderBase::BeginFrame()
 {
-	if(!m_pDepthBuffer)
+	if(!m_depthBuffer)
 	{
 		DXGI_SWAP_CHAIN_DESC1 swapChainDesc;
-		m_pSwapChain->GetDesc1(&swapChainDesc);
+		m_swapChain->GetDesc1(&swapChainDesc);
 
 		const DXGI_SAMPLE_DESC depthSampleDesc =
 		{
@@ -271,15 +281,15 @@ void DemoFramework::D3D12::RenderBase::BeginFrame()
 		depthClearValue.DepthStencil.Stencil = 0;
 
 		// Create the depth buffer resource.
-		m_pDepthBuffer = D3D12::CreateCommittedResource(
-			m_pDevice,
+		m_depthBuffer = D3D12::CreateCommittedResource(
+			m_device,
 			depthBufferDesc,
 			depthHeapProps,
 			D3D12_HEAP_FLAG_NONE,
 			D3D12_RESOURCE_STATE_DEPTH_WRITE,
 			&depthClearValue
 		);
-		assert(m_pDepthBuffer != nullptr);
+		assert(m_depthBuffer != nullptr);
 
 		D3D12_DEPTH_STENCIL_VIEW_DESC depthViewDesc = {};
 		depthViewDesc.Format = DXGI_FORMAT_D32_FLOAT;
@@ -287,27 +297,27 @@ void DemoFramework::D3D12::RenderBase::BeginFrame()
 		depthViewDesc.Flags = D3D12_DSV_FLAG_NONE;
 
 		// Create the depth/stencil view.
-		m_pDevice->CreateDepthStencilView(
-			m_pDepthBuffer.Get(),
+		m_device->CreateDepthStencilView(
+			m_depthBuffer.Get(),
 			&depthViewDesc,
-			m_pDepthDescHeap->GetCPUDescriptorHandleForHeapStart()
+			m_depthDescHeap->GetCPUDescriptorHandleForHeapStart()
 		);
 	}
 
-	m_bufferIndex = m_pSwapChain->GetCurrentBackBufferIndex();
+	m_bufferIndex = m_swapChain->GetCurrentBackBufferIndex();
 
-	ID3D12CommandAllocator* const pCmdAlloc = m_pCmdAlloc[m_bufferIndex].Get();
-	ID3D12GraphicsCommandList* const pCmdList = m_pCmdList[m_bufferIndex].Get();
+	GraphicsCommandContext& drawContext = m_drawContext[m_bufferIndex];
+
+	ID3D12GraphicsCommandList* const pCmdList = drawContext.GetCmdList().Get();
 	ID3D12Resource* const pBackBufferRtv = m_backBuffer.GetRtv(m_bufferIndex).Get();
 
 	const D3D12_CPU_DESCRIPTOR_HANDLE rtvHandle = m_backBuffer.GetCpuDescHandle(m_bufferIndex);
 
 	// Wait for the command queue to finish processing the current back buffer.
-	m_sync[m_bufferIndex].Wait();
+	prv_waitForFrame(m_bufferIndex);
 
-	// Reset the command list and its allocator.
-	pCmdAlloc->Reset();
-	pCmdList->Reset(pCmdAlloc, nullptr);
+	// Reset the command context.
+	drawContext.Reset();
 
 	D3D12_RESOURCE_BARRIER beginBarrier;
 	beginBarrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
@@ -324,7 +334,7 @@ void DemoFramework::D3D12::RenderBase::BeginFrame()
 
 	// Clear the back buffer and depth buffer.
 	pCmdList->ClearRenderTargetView(rtvHandle, clearColor, 0, nullptr);
-	pCmdList->ClearDepthStencilView(m_pDepthDescHeap->GetCPUDescriptorHandleForHeapStart(), D3D12_CLEAR_FLAG_DEPTH, 1.0f, 0, 0, nullptr);
+	pCmdList->ClearDepthStencilView(m_depthDescHeap->GetCPUDescriptorHandleForHeapStart(), D3D12_CLEAR_FLAG_DEPTH, 1.0f, 0, 0, nullptr);
 }
 
 //---------------------------------------------------------------------------------------------------------------------
@@ -334,7 +344,9 @@ void DemoFramework::D3D12::RenderBase::EndFrame(const bool vsync)
 	const uint32_t presentInterval = vsync ? 1 : 0;
 	const uint32_t presentFlags = !vsync ? m_presentTearingFlag : 0;
 
-	ID3D12GraphicsCommandList* const pCmdList = m_pCmdList[m_bufferIndex].Get();
+	GraphicsCommandContext& drawContext = m_drawContext[m_bufferIndex];
+
+	ID3D12GraphicsCommandList* const pCmdList = drawContext.GetCmdList().Get();
 	ID3D12Resource* const pBackBufferRtv = m_backBuffer.GetRtv(m_bufferIndex).Get();
 
 	D3D12_RESOURCE_BARRIER endBarrier;
@@ -348,22 +360,16 @@ void DemoFramework::D3D12::RenderBase::EndFrame(const bool vsync)
 	// Transition the back buffer from a render target to a surface that can be presented to the swap chain.
 	pCmdList->ResourceBarrier(1, &endBarrier);
 
-	// Stop recording commands.
-	pCmdList->Close();
-
-	ID3D12CommandList* const pCmdLists[] =
-	{
-		pCmdList,
-	};
-
-	// Execute the specified command lists.
-	m_pCmdQueue->ExecuteCommandLists(1, pCmdLists);
+	drawContext.Submit(m_cmdQueue);
 
 	// Present the current back buffer to the screen and flip to the next buffer.
-	m_pSwapChain->Present(presentInterval, presentFlags);
+	m_swapChain->Present(presentInterval, presentFlags);
 
-	// Add a signal to the command queue so we know when back buffer is no longer in use.
-	m_sync[m_bufferIndex].Signal(m_pCmdQueue);
+	// Add a signal to the command queue so we know when the current back buffer is no longer in use.
+	m_cmdQueue->Signal(m_drawFence.Get(), m_nextFenceMarker);
+
+	m_fenceMarker[m_bufferIndex] = m_nextFenceMarker;
+	++m_nextFenceMarker;
 }
 
 //---------------------------------------------------------------------------------------------------------------------
@@ -372,23 +378,24 @@ bool DemoFramework::D3D12::RenderBase::ResizeSwapChain()
 {
 	// Wait for each pending present to complete since no back buffer
 	// resources can be in use when resizing the swap chain.
-	for(uint32_t i = 0; i < m_bufferCount; ++i)
-	{
-		m_sync[i].Wait();
-	}
+	m_cmdQueue->Signal(m_drawFence.Get(), m_nextFenceMarker);
+	m_drawFence->SetEventOnCompletion(m_nextFenceMarker, m_drawEvent->GetHandle());
+	::WaitForSingleObject(m_drawEvent->GetHandle(), INFINITE);
+
+	++m_nextFenceMarker;
 
 	// Clear the existing back buffer resources.
 	m_backBuffer.Destroy();
 
 	// Resize the swap chain, preserving the existing buffer count and format,
 	// and using the window's width and height for the new buffers
-	m_pSwapChain->ResizeBuffers(0, 0, 0, DXGI_FORMAT_UNKNOWN, m_swapChainFlags);
+	m_swapChain->ResizeBuffers(0, 0, 0, DXGI_FORMAT_UNKNOWN, m_swapChainFlags);
 
 	// Create new back buffer resources from the resized swap chain.
-	const bool createBackBufferResult = m_backBuffer.Initialize(m_pDevice, m_pSwapChain, D3D12_DESCRIPTOR_HEAP_FLAG_NONE, 0);
+	const bool createBackBufferResult = m_backBuffer.Initialize(m_device, m_swapChain, D3D12_DESCRIPTOR_HEAP_FLAG_NONE, 0);
 
 	// Clear the depth buffer so it's created again at the beginning of the frame.
-	m_pDepthBuffer.Reset();
+	m_depthBuffer.Reset();
 
 	return createBackBufferResult;
 }
@@ -397,16 +404,36 @@ bool DemoFramework::D3D12::RenderBase::ResizeSwapChain()
 
 void DemoFramework::D3D12::RenderBase::SetBackBufferAsRenderTarget()
 {
-	const D3D12_CPU_DESCRIPTOR_HANDLE depthTargetHandle = m_pDepthDescHeap->GetCPUDescriptorHandleForHeapStart();
+	const D3D12_CPU_DESCRIPTOR_HANDLE depthTargetHandle = m_depthDescHeap->GetCPUDescriptorHandleForHeapStart();
 	const D3D12_CPU_DESCRIPTOR_HANDLE renderTargetHandles[] =
 	{
 		m_backBuffer.GetCpuDescHandle(m_bufferIndex),
 	};
 
-	ID3D12GraphicsCommandList* const pCmdList = m_pCmdList[m_bufferIndex].Get();
+	GraphicsCommandContext& drawContext = m_drawContext[m_bufferIndex];
+	ID3D12GraphicsCommandList* const pCmdList = drawContext.GetCmdList().Get();
 
 	// Set the back buffer as the render target along with the base depth target.
 	pCmdList->OMSetRenderTargets(1, renderTargetHandles, false, &depthTargetHandle);
+}
+
+//---------------------------------------------------------------------------------------------------------------------
+
+void DemoFramework::D3D12::RenderBase::prv_waitForFrame(const uint32_t bufferIndex)
+{
+	const uint64_t currentMarker = m_fenceMarker[bufferIndex];
+
+	m_fenceMarker[bufferIndex] = 0;
+
+	if(m_drawFence->GetCompletedValue() < currentMarker)
+	{
+		// Bind the event to the current buffer's fence value.
+		const HRESULT setEventResult = m_drawFence->SetEventOnCompletion(currentMarker, m_drawEvent->GetHandle());
+		assert(setEventResult == S_OK); (void) setEventResult;
+
+		// Wait for the event to be triggered by the fence.
+		::WaitForSingleObject(m_drawEvent->GetHandle(), INFINITE);
+	}
 }
 
 //---------------------------------------------------------------------------------------------------------------------

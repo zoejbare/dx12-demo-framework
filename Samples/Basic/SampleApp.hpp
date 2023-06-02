@@ -63,7 +63,7 @@ private:
 
 	bool prv_loadShaders();
 	bool prv_createGfxPipeline();
-	bool prv_createQuadGeometry(const DemoFramework::D3D12::CommandAllocatorPtr&, const DemoFramework::D3D12::GraphicsCommandListPtr&);
+	bool prv_createQuadGeometry();
 	bool prv_createConstBuffer();
 	bool prv_initGui();
 
@@ -72,18 +72,18 @@ private:
 	DemoFramework::D3D12::RenderBase* m_pRenderBase;
 	DemoFramework::D3D12::Gui* m_pGui;
 
-	DemoFramework::D3D12::RootSignaturePtr m_pRootSignature;
-	DemoFramework::D3D12::PipelineStatePtr m_pGfxPipeline;
-	DemoFramework::D3D12::DescriptorHeapPtr m_pVertexShaderDescHeap;
+	DemoFramework::D3D12::RootSignaturePtr m_rootSignature;
+	DemoFramework::D3D12::PipelineStatePtr m_gfxPipeline;
+	DemoFramework::D3D12::DescriptorHeapPtr m_vertexShaderDescHeap;
 
-	DemoFramework::D3D12::ResourcePtr m_pQuadVertexBuffer;
-	DemoFramework::D3D12::ResourcePtr m_pQuadIndexBuffer;
+	DemoFramework::D3D12::ResourcePtr m_quadVertexBuffer;
+	DemoFramework::D3D12::ResourcePtr m_quadIndexBuffer;
 
-	DemoFramework::D3D12::ResourcePtr m_pConstBuffer;
-	DemoFramework::D3D12::ResourcePtr m_pStagingConstBuffer[DF_SWAP_CHAIN_BUFFER_MAX_COUNT];
+	DemoFramework::D3D12::ResourcePtr m_constBuffer;
+	DemoFramework::D3D12::ResourcePtr m_stagingConstBuffer[DF_SWAP_CHAIN_BUFFER_MAX_COUNT];
 
-	DemoFramework::D3D12::BlobPtr m_pVertexShader;
-	DemoFramework::D3D12::BlobPtr m_pPixelShader;
+	DemoFramework::D3D12::BlobPtr m_vertexShader;
+	DemoFramework::D3D12::BlobPtr m_pixelShader;
 
 	DemoFramework::FrameTimer m_frameTimer;
 
@@ -101,13 +101,13 @@ inline SampleApp::SampleApp()
 	: m_pWindow()
 	, m_pRenderBase(nullptr)
 	, m_pGui(nullptr)
-	, m_pRootSignature()
-	, m_pGfxPipeline()
-	, m_pVertexShaderDescHeap()
-	, m_pQuadVertexBuffer()
-	, m_pQuadIndexBuffer()
-	, m_pConstBuffer()
-	, m_pStagingConstBuffer()
+	, m_rootSignature()
+	, m_gfxPipeline()
+	, m_vertexShaderDescHeap()
+	, m_quadVertexBuffer()
+	, m_quadIndexBuffer()
+	, m_constBuffer()
+	, m_stagingConstBuffer()
 	, m_frameTimer()
 	, m_worldMatrix()
 	, m_viewMatrix()
