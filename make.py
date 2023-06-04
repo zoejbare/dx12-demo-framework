@@ -237,6 +237,7 @@ class LibDemoFramework(object):
 	dependencies = [
 		ExtLibImgui.projectName,
 		ExtLibImplot.projectName,
+		ExtLibTinyObjLoader.projectName,
 	]
 
 with csbuild.Project(LibDemoFramework.projectName, LibDemoFramework.sourcePath, LibDemoFramework.dependencies):
