@@ -397,6 +397,15 @@ bool DemoFramework::D3D12::Model::InitializeFromObj(
 				return nullptr;
 			}
 
+			// Create the staging command synchronization primitive so we can wait for
+			// all staging resource copies to complete at the end of initialization.
+			D3D12::Sync stagingCmdSync;
+			if(!stagingCmdSync.Initialize(device, D3D12_FENCE_FLAG_NONE))
+			{
+				delete pMesh;
+				return nullptr;
+			}
+
 			void* pStagingVertexData = nullptr;
 			void* pStagingIndexData = nullptr;
 
@@ -437,14 +446,6 @@ bool DemoFramework::D3D12::Model::InitializeFromObj(
 				vertexBufferBarrier,
 				indexBufferBarrier,
 			};
-
-			// Create the staging command synchronization primitive so we can wait for
-			// all staging resource copies to complete at the end of initialization.
-			D3D12::Sync stagingCmdSync;
-			if(!stagingCmdSync.Initialize(device, D3D12_FENCE_FLAG_NONE))
-			{
-				return false;
-			}
 
 			ID3D12GraphicsCommandList* const pUploadCmdList = uploadContext.GetCmdList().Get();
 
