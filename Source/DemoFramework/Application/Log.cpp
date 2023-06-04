@@ -72,8 +72,9 @@ void DemoFramework::Log::prv_write(
 	assert((function == nullptr) || (function != nullptr && function[0] != '\0'));
 
 	constexpr const char* const errorTag = "(ERROR) ";
-	constexpr size_t errorTagLength = DF_ARRAY_LENGTH(errorTag);
 	constexpr size_t maxInt32Length = 11;
+
+	const size_t errorTagLength = strlen(errorTag);
 
 	// Make a copy of the variable args since we need to use it to find the buffer size.
 	va_list argsCopy;
