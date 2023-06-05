@@ -25,39 +25,36 @@
 
 //---------------------------------------------------------------------------------------------------------------------
 
-bool DemoFramework::D3D12::Sync::Initialize(const DevicePtr& pDevice, const D3D12_FENCE_FLAGS flags)
+DemoFramework::D3D12::Sync::Ptr DemoFramework::D3D12::Sync::Create(const DevicePtr& device, const D3D12_FENCE_FLAGS flags)
 {
-	if(!pDevice)
+	if(!device)
 	{
 		LOG_ERROR("Invalid parameter");
-		return false;
-	}
-	else if(m_initialized)
-	{
-		LOG_ERROR("Sync object already initialized");
-		return false;
+		return Ptr();
 	}
 
+	Ptr output = std::make_shared<Sync>();
+
 	// Create a fence object.
-	m_pFence = CreateFence(pDevice, flags, 0);
-	if(!m_pFence)
+	output->m_fence = CreateFence(device, flags, 0);
+	if(!output->m_fence)
 	{
-		return false;
+		return Ptr();
 	}
 
 	// Create a native event that will be set when the fence is signaled.
-	m_pEvent = CreateEvent(nullptr, false, false, nullptr);
-	if(!m_pEvent)
+	output->m_event = CreateEvent(nullptr, false, false, nullptr);
+	if(!output->m_event)
 	{
-		return false;
+		return Ptr();
 	}
 
-	m_waitValue = 0;
-	m_nextValue = m_waitValue + 1;
+	output->m_waitValue = 0;
+	output->m_nextValue = output->m_waitValue + 1;
 
-	m_initialized = true;
+	output->m_initialized = true;
 
-	return true;
+	return output;
 }
 
 //---------------------------------------------------------------------------------------------------------------------
@@ -66,7 +63,7 @@ void DemoFramework::D3D12::Sync::Signal(const CommandQueuePtr& pCmdQueue)
 {
 	if(m_initialized)
 	{
-		const HRESULT result = pCmdQueue->Signal(m_pFence.Get(), m_nextValue);
+		const HRESULT result = pCmdQueue->Signal(m_fence.Get(), m_nextValue);
 		if(result != S_OK)
 		{
 			LOG_ERROR("Failed to enqueue fence signal command; result='0x%08" PRIX32 "'", result);
@@ -83,16 +80,16 @@ void DemoFramework::D3D12::Sync::Signal(const CommandQueuePtr& pCmdQueue)
 
 void DemoFramework::D3D12::Sync::Wait(const uint32_t timeout)
 {
-	if(m_initialized && m_pFence->GetCompletedValue() != m_waitValue)
+	if(m_initialized && m_fence->GetCompletedValue() != m_waitValue)
 	{
-		const HRESULT result = m_pFence->SetEventOnCompletion(m_waitValue, m_pEvent->GetHandle());
+		const HRESULT result = m_fence->SetEventOnCompletion(m_waitValue, m_event->GetHandle());
 		if(result != S_OK)
 		{
 			LOG_ERROR("Failed to set completion event on fence; result='0x%08" PRIX32 "'", result);
 			return;
 		}
 
-		::WaitForSingleObject(m_pEvent->GetHandle(), timeout);
+		::WaitForSingleObject(m_event->GetHandle(), timeout);
 	}
 }
 

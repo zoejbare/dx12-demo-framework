@@ -106,14 +106,26 @@ bool SampleApp::Initialize(DemoFramework::Window* const pWindow)
 	const uint32_t clientWidth = m_pWindow->GetClientWidth();
 	const uint32_t clientHeight = m_pWindow->GetClientHeight();
 
-	m_pRenderBase = new D3D12::RenderBase();
-	assert(m_pRenderBase != nullptr);
-
-	m_pGui = new D3D12::Gui();
-	assert(m_pGui != nullptr);
+	LOG_WRITE("Initializing base render resources ...");
 
 	// Initialize the common rendering resources.
-	if(!m_pRenderBase->Initialize(hWnd, clientWidth, clientHeight, APP_BACK_BUFFER_COUNT, APP_BACK_BUFFER_FORMAT, APP_DEPTH_BUFFER_FORMAT))
+	m_renderBase = D3D12::RenderBase::Create(
+		hWnd,
+		clientWidth,
+		clientHeight,
+		APP_BACK_BUFFER_COUNT,
+		APP_BACK_BUFFER_FORMAT,
+		APP_DEPTH_BUFFER_FORMAT);
+	if(!m_renderBase)
+	{
+		return false;
+	}
+
+	LOG_WRITE("Initializing GUI resources ...");
+
+	// Initialize the on-screen GUI.
+	m_gui = D3D12::Gui::Create(m_renderBase->GetDevice(), APP_NAME, APP_BACK_BUFFER_COUNT, APP_BACK_BUFFER_FORMAT);
+	if(!m_gui)
 	{
 		return false;
 	}
@@ -142,14 +154,8 @@ bool SampleApp::Initialize(DemoFramework::Window* const pWindow)
 		return false;
 	}
 
-	// Initialize the GUI.
-	if(!prv_initGui())
-	{
-		return false;
-	}
-
 	// Set the size of the GUI display area.
-	m_pGui->SetDisplaySize(pWindow->GetClientWidth(), pWindow->GetClientHeight());
+	m_gui->SetDisplaySize(pWindow->GetClientWidth(), pWindow->GetClientHeight());
 
 	// Initialize the frame timer at the end so the initial timestamp is not
 	// influenced by the time it takes to create the application resources.
@@ -167,7 +173,7 @@ bool SampleApp::Update()
 
 	if(m_resizeSwapChain)
 	{
-		const bool resizeSwapChainResult = m_pRenderBase->ResizeSwapChain();
+		const bool resizeSwapChainResult = m_renderBase->ResizeSwapChain();
 		assert(resizeSwapChainResult == true); (void) resizeSwapChainResult;
 
 		m_resizeSwapChain = false;
@@ -195,7 +201,7 @@ bool SampleApp::Update()
 		rotation -= M_TAU;
 	}
 
-	m_pGui->Update(
+	m_gui->Update(
 		m_frameTimer.GetDeltaTime(),
 		[](ImGuiContext* const pGuiContext)
 		{
@@ -217,14 +223,14 @@ void SampleApp::Render()
 
 	const uint32_t clientWidth = m_pWindow->GetClientWidth();
 	const uint32_t clientHeight = m_pWindow->GetClientHeight();
-	const uint32_t bufferIndex = m_pRenderBase->GetBufferIndex();
+	const uint32_t bufferIndex = m_renderBase->GetBufferIndex();
 
-	m_pRenderBase->BeginFrame();
-	m_pRenderBase->SetBackBufferAsRenderTarget();
+	m_renderBase->BeginFrame();
+	m_renderBase->SetBackBufferAsRenderTarget();
 
 	// The swap chain buffer index is updated during the call to BeginFrame(),
 	// so we need to wait until *after* that to get the current command list.
-	ID3D12GraphicsCommandList* const pCmdList = m_pRenderBase->GetDrawContext().GetCmdList().Get();
+	ID3D12GraphicsCommandList* const pCmdList = m_renderBase->GetDrawContext()->GetCmdList().Get();
 
 	void* pConstData = nullptr;
 
@@ -314,18 +320,15 @@ void SampleApp::Render()
 	pCmdList->DrawIndexedInstanced(6, 1, 0, 0, 0);
 
 	// Draw the GUI.
-	m_pGui->Render(pCmdList);
+	m_gui->Render(pCmdList);
 
-	m_pRenderBase->EndFrame(true);
+	m_renderBase->EndFrame(true);
 }
 
 //---------------------------------------------------------------------------------------------------------------------
 
 void SampleApp::Shutdown()
 {
-	// Clean up the GUI.
-	delete m_pGui;
-
 	// Clean up the application render resources.
 	m_rootSignature.Reset();
 	m_gfxPipeline.Reset();
@@ -335,7 +338,8 @@ void SampleApp::Shutdown()
 	m_vertexShaderDescHeap.Reset();
 
 	// Clean up the common render resources last.
-	delete m_pRenderBase;
+	m_gui.reset();
+	m_renderBase.reset();
 }
 
 //---------------------------------------------------------------------------------------------------------------------
@@ -346,7 +350,7 @@ void SampleApp::OnWindowResized(DemoFramework::Window* const pWindow, const uint
 	DF_UNUSED(previousWidth);
 	DF_UNUSED(previousHeight);
 
-	m_pGui->SetDisplaySize(pWindow->GetClientWidth(), pWindow->GetClientHeight());
+	m_gui->SetDisplaySize(pWindow->GetClientWidth(), pWindow->GetClientHeight());
 
 	m_resizeSwapChain = true;
 }
@@ -359,7 +363,7 @@ void SampleApp::OnWindowMouseMove(DemoFramework::Window* const pWindow, const in
 	DF_UNUSED(previousX);
 	DF_UNUSED(previousY);
 
-	m_pGui->SetMousePosition(pWindow->GetMouseX(), pWindow->GetMouseY());
+	m_gui->SetMousePosition(pWindow->GetMouseX(), pWindow->GetMouseY());
 }
 
 //---------------------------------------------------------------------------------------------------------------------
@@ -369,7 +373,7 @@ void SampleApp::OnWindowMouseWheel(DemoFramework::Window* const pWindow, const f
 	DF_UNUSED(pWindow);
 	DF_UNUSED(wheelDelta);
 
-	m_pGui->SetMouseWheelDelta(wheelDelta);
+	m_gui->SetMouseWheelDelta(wheelDelta);
 }
 
 //---------------------------------------------------------------------------------------------------------------------
@@ -395,7 +399,7 @@ void SampleApp::OnWindowMouseButtonPressed(DemoFramework::Window* const pWindow,
 			break;
 	}
 
-	m_pGui->SetMouseButtonState(buttonIndex, true);
+	m_gui->SetMouseButtonState(buttonIndex, true);
 }
 
 //---------------------------------------------------------------------------------------------------------------------
@@ -421,7 +425,7 @@ void SampleApp::OnWindowMouseButtonReleased(DemoFramework::Window* const pWindow
 			break;
 	}
 
-	m_pGui->SetMouseButtonState(buttonIndex, false);
+	m_gui->SetMouseButtonState(buttonIndex, false);
 }
 
 //---------------------------------------------------------------------------------------------------------------------
@@ -467,7 +471,7 @@ bool SampleApp::prv_createGfxPipeline()
 
 	LOG_WRITE("Creating graphics pipeline resources ...");
 
-	const D3D12::DevicePtr& pDevice = m_pRenderBase->GetDevice().Get();
+	const D3D12::DevicePtr& pDevice = m_renderBase->GetDevice().Get();
 
 	const D3D12_DESCRIPTOR_RANGE descRange =
 	{
@@ -643,7 +647,7 @@ bool SampleApp::prv_createQuadGeometry()
 {
 	using namespace DemoFramework;
 
-	const D3D12::DevicePtr& pDevice = m_pRenderBase->GetDevice();
+	const D3D12::DevicePtr& pDevice = m_renderBase->GetDevice();
 
 
 	// Construct the geometry for a quad
@@ -786,14 +790,14 @@ bool SampleApp::prv_createQuadGeometry()
 
 	// Create the staging command synchronization primitive so we can wait for
 	// all staging resource copies to complete at the end of initialization.
-	D3D12::Sync stagingCmdSync;
-	if(!stagingCmdSync.Initialize(pDevice, D3D12_FENCE_FLAG_NONE))
+	D3D12::Sync::Ptr stagingCmdSync = D3D12::Sync::Create(pDevice, D3D12_FENCE_FLAG_NONE);
+	if(!stagingCmdSync)
 	{
 		return false;
 	}
 
-	D3D12::GraphicsCommandContext& uploadContext = m_pRenderBase->GetUploadContext();
-	ID3D12GraphicsCommandList* const pUploadCmdList = uploadContext.GetCmdList().Get();
+	const D3D12::GraphicsCommandContext::Ptr& uploadContext = m_renderBase->GetUploadContext();
+	ID3D12GraphicsCommandList* const pUploadCmdList = uploadContext->GetCmdList().Get();
 
 	// Before rendering begins, use a temporary command list to copy all static buffer data.
 	pUploadCmdList->CopyResource(m_quadVertexBuffer.Get(), stagingVertexBuffer.Get());
@@ -801,14 +805,14 @@ bool SampleApp::prv_createQuadGeometry()
 	pUploadCmdList->ResourceBarrier(_countof(bufferBarriers), bufferBarriers);
 
 	// Stop recording commands in the staging command list and begin executing it.
-	uploadContext.Submit(m_pRenderBase->GetCmdQueue());
+	uploadContext->Submit(m_renderBase->GetCmdQueue());
 
 	// Wait for the staging command list to finish executing.
-	stagingCmdSync.Signal(m_pRenderBase->GetCmdQueue());
-	stagingCmdSync.Wait();
+	stagingCmdSync->Signal(m_renderBase->GetCmdQueue());
+	stagingCmdSync->Wait();
 
 	// Reset the command list so it can be used again.
-	uploadContext.Reset();
+	uploadContext->Reset();
 
 	return true;
 }
@@ -821,7 +825,7 @@ bool SampleApp::prv_createConstBuffer()
 
 	LOG_WRITE("Creating constant buffer resources ...");
 
-	const D3D12::DevicePtr& pDevice = m_pRenderBase->GetDevice();
+	const D3D12::DevicePtr& pDevice = m_renderBase->GetDevice();
 
 	// Constant buffers are required to have a size that is 256-byte aligned.
 	const D3D12_RESOURCE_DESC constBufferDesc =
@@ -888,23 +892,6 @@ bool SampleApp::prv_createConstBuffer()
 
 	// Create the constant buffer view for the vertex shader.
 	pDevice->CreateConstantBufferView(&constBufferViewDesc, m_vertexShaderDescHeap->GetCPUDescriptorHandleForHeapStart());
-
-	return true;
-}
-
-//---------------------------------------------------------------------------------------------------------------------
-
-bool SampleApp::prv_initGui()
-{
-	using namespace DemoFramework;
-
-	LOG_WRITE("Initializing GUI resources ...");
-
-	// Initialize the on-screen GUI.
-	if(!m_pGui->Initialize(m_pRenderBase->GetDevice(), APP_NAME, APP_BACK_BUFFER_COUNT, APP_BACK_BUFFER_FORMAT))
-	{
-		return false;
-	}
 
 	return true;
 }

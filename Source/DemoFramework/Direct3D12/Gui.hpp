@@ -22,6 +22,7 @@
 #include "LowLevel/Types.hpp"
 
 #include <functional>
+#include <memory>
 
 //---------------------------------------------------------------------------------------------------------------------
 
@@ -44,6 +45,8 @@ class DF_API DemoFramework::D3D12::Gui
 {
 public:
 
+	typedef std::shared_ptr<Gui> Ptr;
+
 	typedef std::function<void(ImGuiContext*)> CustomGuiDrawFn;
 
 	Gui();
@@ -54,9 +57,10 @@ public:
 	Gui& operator =(const Gui&) = delete;
 	Gui& operator =(Gui&&) = delete;
 
-	bool Initialize(const DevicePtr& pDevice, const char* demoName, uint32_t bufferCount, DXGI_FORMAT renderTargetFormat);
+	static Ptr Create(const DevicePtr& device, const char* demoName, uint32_t bufferCount, DXGI_FORMAT renderTargetFormat);
+
 	void Update(float64_t deltaTime, CustomGuiDrawFn customGuiDraw = nullptr);
-	void Render(const GraphicsCommandListPtr& pCmdList);
+	void Render(const GraphicsCommandListPtr& cmdList);
 
 	void SetDisplaySize(uint32_t width, uint32_t height);
 	void SetMousePosition(int32_t positionX, int32_t positionY);
@@ -94,14 +98,20 @@ private:
 	FrameTimePlot m_frameTimePlot;
 	DeltaTime m_deltaTime;
 
-	DescriptorHeapPtr m_pFontSrvHeap;
+	DescriptorHeapPtr m_fontSrvHeap;
 
 	ImGuiContext* m_pGuiContext;
 	ImPlotContext* m_pPlotContext;
 
 	float64_t m_totalTime;
 	float64_t m_updateTimer;
+
+	bool m_initialized;
 };
+
+//---------------------------------------------------------------------------------------------------------------------
+
+template class DF_API std::shared_ptr<DemoFramework::D3D12::Gui>;
 
 //---------------------------------------------------------------------------------------------------------------------
 
@@ -109,11 +119,12 @@ inline DemoFramework::D3D12::Gui::Gui()
 	: m_demoName()
 	, m_frameTimePlot()
 	, m_deltaTime()
-	, m_pFontSrvHeap()
+	, m_fontSrvHeap()
 	, m_pGuiContext(nullptr)
 	, m_pPlotContext(nullptr)
 	, m_totalTime(0.0)
 	, m_updateTimer(0.0)
+	, m_initialized(false)
 {
 }
 

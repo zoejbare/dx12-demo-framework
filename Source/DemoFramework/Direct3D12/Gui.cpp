@@ -62,13 +62,13 @@ DemoFramework::D3D12::Gui::~Gui()
 
 //---------------------------------------------------------------------------------------------------------------------
 
-bool DemoFramework::D3D12::Gui::Initialize(
-	const DevicePtr& pDevice,
+DemoFramework::D3D12::Gui::Ptr DemoFramework::D3D12::Gui::Create(
+	const DevicePtr& device,
 	const char* const demoName,
 	const uint32_t bufferCount,
 	const DXGI_FORMAT renderTargetFormat)
 {
-	if(!pDevice
+	if(!device
 		|| !demoName
 		|| demoName[0] == '\0'
 		|| bufferCount == 0
@@ -76,8 +76,10 @@ bool DemoFramework::D3D12::Gui::Initialize(
 		|| renderTargetFormat == DXGI_FORMAT_UNKNOWN)
 	{
 		LOG_ERROR("Invalid parameter");
-		return false;
+		return Ptr();
 	}
+
+	Ptr output = std::make_shared<Gui>();
 
 	constexpr D3D12_DESCRIPTOR_HEAP_DESC descHeapDesc =
 	{
@@ -90,35 +92,35 @@ bool DemoFramework::D3D12::Gui::Initialize(
 	LOG_WRITE("Creating ImGui font SRV descriptor heap ...");
 
 	// Create the font SRV heap.
-	m_pFontSrvHeap = CreateDescriptorHeap(pDevice, descHeapDesc);
-	if(!m_pFontSrvHeap)
+	output->m_fontSrvHeap = CreateDescriptorHeap(device, descHeapDesc);
+	if(!output->m_fontSrvHeap)
 	{
-		return false;
+		return Ptr();
 	}
 
 	LOG_WRITE("Creating ImGui context ...");
 
 	// Create the ImGui context.
-	m_pGuiContext = ImGui::CreateContext();
-	if(!m_pGuiContext)
+	output->m_pGuiContext = ImGui::CreateContext();
+	if(!output->m_pGuiContext)
 	{
 		LOG_ERROR("Failed to create ImGui context");
-		return false;
+		return Ptr();
 	}
 
 	LOG_WRITE("Creating ImPlot context ...");
 
 	// Create the ImPlot context.
-	m_pPlotContext = ImPlot::CreateContext();
-	if(!m_pPlotContext)
+	output->m_pPlotContext = ImPlot::CreateContext();
+	if(!output->m_pPlotContext)
 	{
 		LOG_ERROR("Failed to create ImPlot context");
-		return false;
+		return Ptr();
 	}
 
 	// Update ImGui's view of the current context so we can use the one we just created.
-	ImGui::SetCurrentContext(m_pGuiContext);
-	ImPlot::SetCurrentContext(m_pPlotContext);
+	ImGui::SetCurrentContext(output->m_pGuiContext);
+	ImPlot::SetCurrentContext(output->m_pPlotContext);
 
 	// Configure the new ImGui context.
 	ImGuiIO& io = ImGui::GetIO();
@@ -134,23 +136,25 @@ bool DemoFramework::D3D12::Gui::Initialize(
 	//       but for use in a demo application, it removes the need to
 	//       setup a lot of boilerplate code.
 	ImGui_ImplDX12_Init(
-		pDevice.Get(),
+		device.Get(),
 		bufferCount,
 		renderTargetFormat,
-		m_pFontSrvHeap.Get(),
-		m_pFontSrvHeap->GetCPUDescriptorHandleForHeapStart(),
-		m_pFontSrvHeap->GetGPUDescriptorHandleForHeapStart());
+		output->m_fontSrvHeap.Get(),
+		output->m_fontSrvHeap->GetCPUDescriptorHandleForHeapStart(),
+		output->m_fontSrvHeap->GetGPUDescriptorHandleForHeapStart());
 
-	snprintf(m_demoName, GUI_NAME_BUFFER_SIZE, "%s", demoName);
+	snprintf(output->m_demoName, GUI_NAME_BUFFER_SIZE, "%s", demoName);
 
-	return true;
+	output->m_initialized = true;
+
+	return output;
 }
 
 //---------------------------------------------------------------------------------------------------------------------
 
 void DemoFramework::D3D12::Gui::Update(const float64_t deltaTime, CustomGuiDrawFn customGuiDraw)
 {
-	if(m_pGuiContext)
+	if(m_initialized)
 	{
 		ImGui::SetCurrentContext(m_pGuiContext);
 
@@ -299,11 +303,11 @@ void DemoFramework::D3D12::Gui::Update(const float64_t deltaTime, CustomGuiDrawF
 
 //---------------------------------------------------------------------------------------------------------------------
 
-void DemoFramework::D3D12::Gui::Render(const GraphicsCommandListPtr& pCmdList)
+void DemoFramework::D3D12::Gui::Render(const GraphicsCommandListPtr& cmdList)
 {
 	using namespace DirectX;
 
-	if(m_pGuiContext)
+	if(m_initialized)
 	{
 		ImGui::SetCurrentContext(m_pGuiContext);
 
@@ -315,12 +319,12 @@ void DemoFramework::D3D12::Gui::Render(const GraphicsCommandListPtr& pCmdList)
 		// Set the font SRV descriptor heap.
 		ID3D12DescriptorHeap* const pDescHeaps[] =
 		{
-			m_pFontSrvHeap.Get(),
+			m_fontSrvHeap.Get(),
 		};
-		pCmdList->SetDescriptorHeaps(_countof(pDescHeaps), pDescHeaps);
+		cmdList->SetDescriptorHeaps(_countof(pDescHeaps), pDescHeaps);
 
 		// Issue the GUI draw calls to DirectX.
-		ImGui_ImplDX12_RenderDrawData(pDrawData, pCmdList.Get());
+		ImGui_ImplDX12_RenderDrawData(pDrawData, cmdList.Get());
 	}
 }
 
@@ -328,46 +332,58 @@ void DemoFramework::D3D12::Gui::Render(const GraphicsCommandListPtr& pCmdList)
 
 void DemoFramework::D3D12::Gui::SetDisplaySize(const uint32_t width, const uint32_t height)
 {
-	ImGui::SetCurrentContext(m_pGuiContext);
+	if(m_initialized)
+	{
+		ImGui::SetCurrentContext(m_pGuiContext);
 
-	ImGuiIO& io = ImGui::GetIO();
+		ImGuiIO& io = ImGui::GetIO();
 
-	io.DisplaySize.x = float32_t(width);
-	io.DisplaySize.y = float32_t(height);
+		io.DisplaySize.x = float32_t(width);
+		io.DisplaySize.y = float32_t(height);
+	}
 }
 
 //---------------------------------------------------------------------------------------------------------------------
 
 void DemoFramework::D3D12::Gui::SetMousePosition(const int32_t positionX, const int32_t positionY)
 {
-	ImGui::SetCurrentContext(m_pGuiContext);
+	if(m_initialized)
+	{
+		ImGui::SetCurrentContext(m_pGuiContext);
 
-	ImGuiIO& io = ImGui::GetIO();
+		ImGuiIO& io = ImGui::GetIO();
 
-	io.MousePos.x = float32_t(positionX);
-	io.MousePos.y = float32_t(positionY);
+		io.MousePos.x = float32_t(positionX);
+		io.MousePos.y = float32_t(positionY);
+	}
 }
 
 //---------------------------------------------------------------------------------------------------------------------
 
 void DemoFramework::D3D12::Gui::SetMouseWheelDelta(const float32_t wheelDelta)
 {
-	ImGui::SetCurrentContext(m_pGuiContext);
+	if(m_initialized)
+	{
+		ImGui::SetCurrentContext(m_pGuiContext);
 
-	ImGuiIO& io = ImGui::GetIO();
+		ImGuiIO& io = ImGui::GetIO();
 
-	io.MouseWheel = wheelDelta;
+		io.MouseWheel = wheelDelta;
+	}
 }
 
 //---------------------------------------------------------------------------------------------------------------------
 
 void DemoFramework::D3D12::Gui::SetMouseButtonState(const uint32_t buttonIndex, const bool isDown)
 {
-	ImGui::SetCurrentContext(m_pGuiContext);
+	if(m_initialized)
+	{
+		ImGui::SetCurrentContext(m_pGuiContext);
 
-	ImGuiIO& io = ImGui::GetIO();
+		ImGuiIO& io = ImGui::GetIO();
 
-	io.MouseDown[buttonIndex] = isDown;
+		io.MouseDown[buttonIndex] = isDown;
+	}
 }
 
 //---------------------------------------------------------------------------------------------------------------------

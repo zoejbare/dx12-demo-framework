@@ -21,6 +21,8 @@
 
 #include "CommandContext.hpp"
 
+#include <memory>
+
 //---------------------------------------------------------------------------------------------------------------------
 
 #define DF_MESH_NAME_MAX_LENGTH 64
@@ -36,6 +38,8 @@ namespace DemoFramework { namespace D3D12 {
 class DF_API DemoFramework::D3D12::Model
 {
 public:
+
+	typedef std::shared_ptr<Model> Ptr;
 
 	struct Vertex
 	{
@@ -87,10 +91,10 @@ public:
 
 	static D3D12_INPUT_LAYOUT_DESC GetInputLayout();
 
-	bool InitializeFromObj(
+	static Ptr CreateFromObj(
 		const DevicePtr& device,
 		const CommandQueuePtr& cmdQueue,
-		GraphicsCommandContext& uploadContext,
+		const GraphicsCommandContext::Ptr& uploadContext,
 		const char* filePath);
 
 	void Render(const GraphicsCommandListPtr& cmdList, uint32_t instanceCount, D3D12_PRIMITIVE_TOPOLOGY topology);
@@ -104,6 +108,10 @@ private:
 
 	bool m_initialized;
 };
+
+//---------------------------------------------------------------------------------------------------------------------
+
+template class DF_API std::shared_ptr<DemoFramework::D3D12::Model>;
 
 //---------------------------------------------------------------------------------------------------------------------
 

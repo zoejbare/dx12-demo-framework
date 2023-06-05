@@ -21,6 +21,8 @@
 
 #include "LowLevel/Types.hpp"
 
+#include <memory>
+
 //---------------------------------------------------------------------------------------------------------------------
 
 namespace DemoFramework { namespace D3D12 {
@@ -33,6 +35,8 @@ class DF_API DemoFramework::D3D12::Sync
 {
 public:
 
+	typedef std::shared_ptr<Sync> Ptr;
+
 	Sync();
 	Sync(const Sync&) = delete;
 	Sync(Sync&&) = delete;
@@ -40,16 +44,16 @@ public:
 	Sync& operator =(const Sync&) = delete;
 	Sync& operator =(Sync&&) = delete;
 
-	bool Initialize(const DevicePtr& pDevice, D3D12_FENCE_FLAGS flags);
+	static Ptr Create(const DevicePtr& device, D3D12_FENCE_FLAGS flags);
 
-	void Signal(const CommandQueuePtr& pCmdQueue);
+	void Signal(const CommandQueuePtr& cmdQueue);
 	void Wait(uint32_t timeout = INFINITE);
 
 
 private:
 
-	FencePtr m_pFence;
-	EventPtr m_pEvent;
+	FencePtr m_fence;
+	EventPtr m_event;
 
 	uint64_t m_waitValue;
 	uint64_t m_nextValue;
@@ -59,9 +63,13 @@ private:
 
 //---------------------------------------------------------------------------------------------------------------------
 
+template class DF_API std::shared_ptr<DemoFramework::D3D12::Sync>;
+
+//---------------------------------------------------------------------------------------------------------------------
+
 inline DemoFramework::D3D12::Sync::Sync()
-	: m_pFence()
-	, m_pEvent()
+	: m_fence()
+	, m_event()
 	, m_waitValue(0)
 	, m_nextValue(0)
 	, m_initialized(false)

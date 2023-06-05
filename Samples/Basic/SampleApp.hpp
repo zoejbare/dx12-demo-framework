@@ -65,12 +65,11 @@ private:
 	bool prv_createGfxPipeline();
 	bool prv_createQuadGeometry();
 	bool prv_createConstBuffer();
-	bool prv_initGui();
 
 	DemoFramework::Window* m_pWindow;
 
-	DemoFramework::D3D12::RenderBase* m_pRenderBase;
-	DemoFramework::D3D12::Gui* m_pGui;
+	DemoFramework::D3D12::RenderBase::Ptr m_renderBase;
+	DemoFramework::D3D12::Gui::Ptr m_gui;
 
 	DemoFramework::D3D12::RootSignaturePtr m_rootSignature;
 	DemoFramework::D3D12::PipelineStatePtr m_gfxPipeline;
@@ -99,8 +98,8 @@ private:
 
 inline SampleApp::SampleApp()
 	: m_pWindow()
-	, m_pRenderBase(nullptr)
-	, m_pGui(nullptr)
+	, m_renderBase()
+	, m_gui()
 	, m_rootSignature()
 	, m_gfxPipeline()
 	, m_vertexShaderDescHeap()

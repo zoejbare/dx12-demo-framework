@@ -76,10 +76,10 @@ constexpr D3D12_RANGE disabledCpuReadRange =
 
 //---------------------------------------------------------------------------------------------------------------------
 
-bool DemoFramework::D3D12::Model::InitializeFromObj(
+DemoFramework::D3D12::Model::Ptr DemoFramework::D3D12::Model::CreateFromObj(
 	const DevicePtr& device,
 	const CommandQueuePtr& cmdQueue,
-	GraphicsCommandContext& uploadContext,
+	const GraphicsCommandContext::Ptr& uploadContext,
 	const char* const filePath)
 {
 	using namespace DirectX;
@@ -87,37 +87,22 @@ bool DemoFramework::D3D12::Model::InitializeFromObj(
 	if(!device || !filePath || filePath[0] == '\0')
 	{
 		LOG_ERROR("Invalid parameter");
-		return false;
-	}
-	else if(m_initialized)
-	{
-		LOG_ERROR("Sync object already initialized");
-		return false;
+		return Ptr();
 	}
 
-	std::string warnings;
-	std::string errors;
+	Ptr output = std::make_shared<Model>();
 
 	tinyobj::attrib_t attrib;
 
 	std::vector<tinyobj::shape_t> shapes;
 	std::vector<tinyobj::material_t> materials;
 
-	const bool loadResult = tinyobj::LoadObj(&attrib, &shapes, &materials, &warnings, &errors, filePath, nullptr, false, true);
-
-	if(!warnings.empty())
-	{
-		LOG_ERROR("[OBJ_LOAD] (%s) %s", filePath, warnings.c_str());
-	}
-
-	if(!errors.empty())
-	{
-		LOG_ERROR("[OBJ_LOAD] (%s) %s", filePath, errors.c_str());
-	}
+	const bool loadResult = tinyobj::LoadObj(&attrib, &shapes, &materials, nullptr, nullptr, filePath, nullptr, false, true);
 
 	if(!loadResult)
 	{
-		return false;
+		LOG_ERROR("Failed to load Wavefront OBJ file: %s", filePath);
+		return Ptr();
 	}
 
 	if(shapes.size() > 0)
@@ -399,8 +384,8 @@ bool DemoFramework::D3D12::Model::InitializeFromObj(
 
 			// Create the staging command synchronization primitive so we can wait for
 			// all staging resource copies to complete at the end of initialization.
-			D3D12::Sync stagingCmdSync;
-			if(!stagingCmdSync.Initialize(device, D3D12_FENCE_FLAG_NONE))
+			D3D12::Sync::Ptr stagingCmdSync = D3D12::Sync::Create(device, D3D12_FENCE_FLAG_NONE);
+			if(!stagingCmdSync)
 			{
 				delete pMesh;
 				return nullptr;
@@ -447,7 +432,7 @@ bool DemoFramework::D3D12::Model::InitializeFromObj(
 				indexBufferBarrier,
 			};
 
-			ID3D12GraphicsCommandList* const pUploadCmdList = uploadContext.GetCmdList().Get();
+			ID3D12GraphicsCommandList* const pUploadCmdList = uploadContext->GetCmdList().Get();
 
 			// Before rendering begins, use a temporary command list to copy all buffer data.
 			pUploadCmdList->CopyResource(pMesh->vertexBuffer.Get(), stagingVertexBuffer.Get());
@@ -455,14 +440,14 @@ bool DemoFramework::D3D12::Model::InitializeFromObj(
 			pUploadCmdList->ResourceBarrier(_countof(bufferBarriers), bufferBarriers);
 
 			// Stop recording commands in the staging command list and begin executing it.
-			uploadContext.Submit(cmdQueue);
+			uploadContext->Submit(cmdQueue);
 
 			// Wait for the staging command list to finish executing.
-			stagingCmdSync.Signal(cmdQueue);
-			stagingCmdSync.Wait();
+			stagingCmdSync->Signal(cmdQueue);
+			stagingCmdSync->Wait();
 
 			// Reset the command list so it can be used again.
-			uploadContext.Reset();
+			uploadContext->Reset();
 
 			return pMesh;
 		};
@@ -483,21 +468,21 @@ bool DemoFramework::D3D12::Model::InitializeFromObj(
 
 		if(meshCount > 0)
 		{
-			m_ppMeshes = new Mesh*[meshCount];
+			output->m_ppMeshes = new Mesh*[meshCount];
 
 			// Copy the meshes to the final mesh array.
 			for(Mesh* const pMesh : meshes)
 			{
-				m_ppMeshes[m_meshCount] = pMesh;
+				output->m_ppMeshes[output->m_meshCount] = pMesh;
 
-				++m_meshCount;
+				++output->m_meshCount;
 			}
 		}
 	}
 
-	m_initialized = true;
+	output->m_initialized = true;
 
-	return true;
+	return output;
 }
 
 //---------------------------------------------------------------------------------------------------------------------

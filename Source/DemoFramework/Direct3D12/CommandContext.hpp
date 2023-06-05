@@ -21,6 +21,8 @@
 
 #include "LowLevel/Types.hpp"
 
+#include <memory>
+
 //---------------------------------------------------------------------------------------------------------------------
 
 namespace DemoFramework { namespace D3D12 {
@@ -33,6 +35,8 @@ class DF_API DemoFramework::D3D12::GraphicsCommandContext
 {
 public:
 
+	typedef std::shared_ptr<GraphicsCommandContext> Ptr;
+
 	GraphicsCommandContext();
 	GraphicsCommandContext(const GraphicsCommandContext&) = delete;
 	GraphicsCommandContext(GraphicsCommandContext&&) = delete;
@@ -40,7 +44,7 @@ public:
 	GraphicsCommandContext& operator =(const GraphicsCommandContext&) = delete;
 	GraphicsCommandContext& operator =(GraphicsCommandContext&&) = delete;
 
-	bool Initialize(const DevicePtr& device, D3D12_COMMAND_LIST_TYPE type);
+	static Ptr Create(const DevicePtr& device, D3D12_COMMAND_LIST_TYPE type);
 
 	void Reset();
 	void Submit(const CommandQueuePtr& cmdQueue);
@@ -56,6 +60,10 @@ private:
 
 	bool m_initialized;
 };
+
+//---------------------------------------------------------------------------------------------------------------------
+
+template class DF_API std::shared_ptr<DemoFramework::D3D12::GraphicsCommandContext>;
 
 //---------------------------------------------------------------------------------------------------------------------
 

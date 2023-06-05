@@ -21,6 +21,8 @@
 
 #include "LowLevel/Types.hpp"
 
+#include <memory>
+
 //---------------------------------------------------------------------------------------------------------------------
 
 namespace DemoFramework { namespace D3D12 {
@@ -33,6 +35,8 @@ class DF_API DemoFramework::D3D12::BackBuffer
 {
 public:
 
+	typedef std::shared_ptr<BackBuffer> Ptr;
+
 	BackBuffer();
 	BackBuffer(const BackBuffer&) = delete;
 	BackBuffer(BackBuffer&&) = delete;
@@ -40,13 +44,12 @@ public:
 	BackBuffer& operator =(const BackBuffer&) = delete;
 	BackBuffer& operator =(BackBuffer&&) = delete;
 
-	bool Initialize(
-		const DevicePtr& pDevice,
-		const SwapChainPtr& pSwapChain,
+	static Ptr Create(
+		const DevicePtr& device,
+		const SwapChainPtr& swapChain,
 		D3D12_DESCRIPTOR_HEAP_FLAGS flags,
 		uint32_t nodeMask
 	);
-	void Destroy();
 
 	const ResourcePtr& GetRtv(size_t bufferIndex) const;
 
@@ -55,8 +58,8 @@ public:
 
 private:
 
-	ResourcePtr m_pRtv[DF_SWAP_CHAIN_BUFFER_MAX_COUNT];
-	DescriptorHeapPtr m_pDescHeap;
+	ResourcePtr m_rtv[DF_SWAP_CHAIN_BUFFER_MAX_COUNT];
+	DescriptorHeapPtr m_descHeap;
 
 	D3D12_CPU_DESCRIPTOR_HANDLE m_cpuHandle;
 
@@ -68,9 +71,13 @@ private:
 
 //---------------------------------------------------------------------------------------------------------------------
 
+template class DF_API std::shared_ptr<DemoFramework::D3D12::BackBuffer>;
+
+//---------------------------------------------------------------------------------------------------------------------
+
 inline DemoFramework::D3D12::BackBuffer::BackBuffer()
-	: m_pRtv()
-	, m_pDescHeap()
+	: m_rtv()
+	, m_descHeap()
 	, m_cpuHandle({0})
 	, m_bufferCount(0)
 	, m_incrSize(0)
@@ -84,7 +91,7 @@ inline const DemoFramework::D3D12::ResourcePtr& DemoFramework::D3D12::BackBuffer
 {
 	assert(bufferIndex < m_bufferCount);
 
-	return m_pRtv[bufferIndex];
+	return m_rtv[bufferIndex];
 }
 
 //---------------------------------------------------------------------------------------------------------------------

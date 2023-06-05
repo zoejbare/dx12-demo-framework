@@ -25,39 +25,38 @@
 
 //---------------------------------------------------------------------------------------------------------------------
 
-bool DemoFramework::D3D12::GraphicsCommandContext::Initialize(const DevicePtr& device, const D3D12_COMMAND_LIST_TYPE type)
+DemoFramework::D3D12::GraphicsCommandContext::Ptr DemoFramework::D3D12::GraphicsCommandContext::Create(
+	const DevicePtr& device,
+	const D3D12_COMMAND_LIST_TYPE type)
 {
 	if(!device)
 	{
 		LOG_ERROR("Invalid parameter");
-		return false;
-	}
-	else if(m_initialized)
-	{
-		LOG_ERROR("Already initialized");
-		return false;
+		return Ptr();
 	}
 
+	Ptr output = std::make_shared<GraphicsCommandContext>();
+
 	// Create a command allocator.
-	m_cmdAlloc = CreateCommandAllocator(device, type);
-	if(!m_cmdAlloc)
+	output->m_cmdAlloc = CreateCommandAllocator(device, type);
+	if(!output->m_cmdAlloc)
 	{
-		return false;
+		return Ptr();
 	}
 
 	// Create a command list.
-	m_cmdList = D3D12::CreateGraphicsCommandList(device, m_cmdAlloc, type, 0);
-	if(!m_cmdList)
+	output->m_cmdList = D3D12::CreateGraphicsCommandList(device, output->m_cmdAlloc, type, 0);
+	if(!output->m_cmdList)
 	{
-		return false;
+		return Ptr();
 	}
 
 	// Command lists start in the recording state, so for consistency, we'll close them after they're created.
-	m_cmdList->Close();
+	output->m_cmdList->Close();
 
-	m_initialized = true;
+	output->m_initialized = true;
 
-	return true;
+	return output;
 }
 
 //---------------------------------------------------------------------------------------------------------------------

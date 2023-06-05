@@ -36,6 +36,8 @@ class DF_API DemoFramework::D3D12::RenderBase
 {
 public:
 
+	typedef std::shared_ptr<RenderBase> Ptr;
+
 	RenderBase();
 	RenderBase(const RenderBase&) = delete;
 	RenderBase(RenderBase&& other) = delete;
@@ -44,7 +46,7 @@ public:
 	RenderBase& operator =(const RenderBase&) = delete;
 	RenderBase& operator =(RenderBase&&) = delete;
 
-	bool Initialize(
+	static Ptr Create(
 		HWND hWnd,
 		uint32_t backBufferWidth,
 		uint32_t backBufferHeight,
@@ -63,8 +65,8 @@ public:
 	const CommandQueuePtr& GetCmdQueue() const;
 	const SwapChainPtr& GetSwapChain() const;
 
-	GraphicsCommandContext& GetUploadContext();
-	GraphicsCommandContext& GetDrawContext();
+	const GraphicsCommandContext::Ptr& GetUploadContext() const;
+	const GraphicsCommandContext::Ptr& GetDrawContext() const;
 
 	uint32_t GetBufferIndex() const;
 	uint32_t GetBufferCount() const;
@@ -85,10 +87,10 @@ private:
 	FencePtr m_drawFence;
 	EventPtr m_drawEvent;
 
-	GraphicsCommandContext m_uploadContext;
-	GraphicsCommandContext m_drawContext[DF_SWAP_CHAIN_BUFFER_MAX_COUNT];
+	GraphicsCommandContext::Ptr m_uploadContext;
+	GraphicsCommandContext::Ptr m_drawContext[DF_SWAP_CHAIN_BUFFER_MAX_COUNT];
 
-	BackBuffer m_backBuffer;
+	BackBuffer::Ptr m_backBuffer;
 
 	uint64_t m_fenceMarker[DF_SWAP_CHAIN_BUFFER_MAX_COUNT];
 	uint64_t m_nextFenceMarker;
@@ -104,6 +106,10 @@ private:
 
 	bool m_initialized;
 };
+
+//---------------------------------------------------------------------------------------------------------------------
+
+template class DF_API std::shared_ptr<DemoFramework::D3D12::RenderBase>;
 
 //---------------------------------------------------------------------------------------------------------------------
 
@@ -157,14 +163,14 @@ inline const DemoFramework::D3D12::CommandQueuePtr& DemoFramework::D3D12::Render
 
 //---------------------------------------------------------------------------------------------------------------------
 
-inline DemoFramework::D3D12::GraphicsCommandContext& DemoFramework::D3D12::RenderBase::GetUploadContext()
+inline const DemoFramework::D3D12::GraphicsCommandContext::Ptr& DemoFramework::D3D12::RenderBase::GetUploadContext() const
 {
 	return m_uploadContext;
 }
 
 //---------------------------------------------------------------------------------------------------------------------
 
-inline DemoFramework::D3D12::GraphicsCommandContext& DemoFramework::D3D12::RenderBase::GetDrawContext()
+inline const DemoFramework::D3D12::GraphicsCommandContext::Ptr& DemoFramework::D3D12::RenderBase::GetDrawContext() const
 {
 	return m_drawContext[m_bufferIndex];
 }

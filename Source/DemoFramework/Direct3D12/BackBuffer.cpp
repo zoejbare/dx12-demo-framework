@@ -26,89 +26,69 @@
 
 //---------------------------------------------------------------------------------------------------------------------
 
-bool DemoFramework::D3D12::BackBuffer::Initialize(
-	const DevicePtr& pDevice,
-	const SwapChainPtr& pSwapChain,
+DemoFramework::D3D12::BackBuffer::Ptr DemoFramework::D3D12::BackBuffer::Create(
+	const DevicePtr& device,
+	const SwapChainPtr& swapChain,
 	const D3D12_DESCRIPTOR_HEAP_FLAGS flags,
 	const uint32_t nodeMask)
 {
-	if(!pDevice || !pSwapChain)
+	if(!device || !swapChain)
 	{
 		LOG_ERROR("Invalid parameter");
-		return false;
+		return Ptr();
 	}
-	else if(m_initialized)
-	{
-		LOG_ERROR("Back buffer already initialized");
-		return false;
-	}
+
+	Ptr output = std::make_shared<BackBuffer>();
 
 	DXGI_SWAP_CHAIN_DESC1 swapChainDesc;
-	pSwapChain->GetDesc1(&swapChainDesc);
+	swapChain->GetDesc1(&swapChainDesc);
 
-	m_bufferCount = swapChainDesc.BufferCount;
+	output->m_bufferCount = swapChainDesc.BufferCount;
 
 	const D3D12_DESCRIPTOR_HEAP_DESC descHeapDesc =
 	{
 		D3D12_DESCRIPTOR_HEAP_TYPE_RTV, // D3D12_DESCRIPTOR_HEAP_TYPE Type
-		m_bufferCount,                  // UINT NumDescriptors
+		output->m_bufferCount,          // UINT NumDescriptors
 		flags,                          // D3D12_DESCRIPTOR_HEAP_FLAGS Flags
 		nodeMask,                       // UINT NodeMask
 	};
 
 	// Create a descriptor heap associated with this set of back buffers.
-	m_pDescHeap = CreateDescriptorHeap(pDevice, descHeapDesc);
-	if(!m_pDescHeap)
+	output->m_descHeap = CreateDescriptorHeap(device, descHeapDesc);
+	if(!output->m_descHeap)
 	{
-		return false;
+		return Ptr();
 	}
 
 	// Get the start of the descriptor heap memory.
-	D3D12_CPU_DESCRIPTOR_HANDLE tempHandle = m_pDescHeap->GetCPUDescriptorHandleForHeapStart();
+	D3D12_CPU_DESCRIPTOR_HANDLE tempHandle = output->m_descHeap->GetCPUDescriptorHandleForHeapStart();
 
 	// Cache the original descriptor handle value before we modify it creating the RTVs.
-	m_cpuHandle = tempHandle;
-	m_incrSize = pDevice->GetDescriptorHandleIncrementSize(descHeapDesc.Type);
+	output->m_cpuHandle = tempHandle;
+	output->m_incrSize = device->GetDescriptorHandleIncrementSize(descHeapDesc.Type);
 
 	// Create RTVs for each back buffer in the swap chain.
 	for(uint32_t bufferIndex = 0; bufferIndex < swapChainDesc.BufferCount; ++bufferIndex)
 	{
-		ResourcePtr& pBuffer = m_pRtv[bufferIndex];
+		ResourcePtr& pBuffer = output->m_rtv[bufferIndex];
 
 		// Get the back buffer resource for the current buffer index.
-		if(!SUCCEEDED(pSwapChain->GetBuffer(bufferIndex, IID_PPV_ARGS(&pBuffer))))
+		if(!SUCCEEDED(swapChain->GetBuffer(bufferIndex, IID_PPV_ARGS(&pBuffer))))
 		{
 			LOG_ERROR("Failed to retrieve swap chain buffer index '%" PRIu32 "'", bufferIndex);
-			return false;
+			return Ptr();
 		}
 
 		// Create the RTV for the current back buffer resource.
-		pDevice->CreateRenderTargetView(pBuffer.Get(), nullptr, tempHandle);
+		device->CreateRenderTargetView(pBuffer.Get(), nullptr, tempHandle);
 
 		// Update the handle pointer to reference the next buffer in the descriptor.
-		tempHandle.ptr += size_t(m_incrSize);
+		tempHandle.ptr += size_t(output->m_incrSize);
 	}
 
-	m_initialized = true;
+	output->m_initialized = true;
 
-	return true;
-}
-
-//---------------------------------------------------------------------------------------------------------------------
-
-void DemoFramework::D3D12::BackBuffer::Destroy()
-{
-	for(size_t i = 0; i < DF_SWAP_CHAIN_BUFFER_MAX_COUNT; ++i)
-	{
-		m_pRtv[i].Reset();
-	}
-
-	m_pDescHeap.Reset();
-
-	m_cpuHandle = {0};
-	m_bufferCount = 0;
-	m_incrSize = 0;
-	m_initialized = false;
+	return output;
 }
 
 //---------------------------------------------------------------------------------------------------------------------
