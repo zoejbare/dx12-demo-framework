@@ -265,7 +265,7 @@ class Samples(object):
 ###################################################################################################
 
 class SampleBasic(object):
-	projectName = "Sample_Basic"
+	projectName = "Sample-Basic"
 	outputName = "basic-sample"
 	path = f"{Samples.rootPath}/Basic"
 	dependencies = [
@@ -281,6 +281,27 @@ with csbuild.Project(SampleBasic.projectName, Samples.rootPath, SampleBasic.depe
 	csbuild.AddSourceDirectories(
 		Samples.commonPath,
 		SampleBasic.path,
+	)
+
+###################################################################################################
+
+class SamplePbr(object):
+	projectName = "Sample-PBR"
+	outputName = "pbr-sample"
+	path = f"{Samples.rootPath}/Pbr"
+	dependencies = [
+		ExtLibImgui.projectName,
+		ExtLibImplot.projectName,
+
+		LibDemoFramework.projectName,
+	]
+
+with csbuild.Project(SamplePbr.projectName, Samples.rootPath, SamplePbr.dependencies, autoDiscoverSourceFiles=False):
+	csbuild.SetOutput(SamplePbr.outputName, csbuild.ProjectType.Application)
+
+	csbuild.AddSourceDirectories(
+		Samples.commonPath,
+		SamplePbr.path,
 	)
 
 ###################################################################################################
