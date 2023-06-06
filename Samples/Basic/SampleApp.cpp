@@ -337,6 +337,11 @@ void SampleApp::Shutdown()
 	m_constBuffer.Reset();
 	m_vertexShaderDescHeap.Reset();
 
+	for(size_t i = 0; i < DF_SWAP_CHAIN_BUFFER_MAX_COUNT; ++i)
+	{
+		m_stagingConstBuffer[i].Reset();
+	}
+
 	// Clean up the common render resources last.
 	m_gui.reset();
 	m_renderBase.reset();
