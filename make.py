@@ -139,6 +139,48 @@ def onGlobalPostBuild(projects):
 
 ###################################################################################################
 
+class ExtLibDirectTex(object):
+	projectName = "Ext_DirectXTex"
+	outputName = "libdirectxtex"
+	path = "External/DirectXTex/DirectXTex"
+	projectType = csbuild.ProjectType.StaticLibrary
+
+with csbuild.Project(ExtLibDirectTex.projectName, ExtLibDirectTex.path, autoDiscoverSourceFiles=False):
+	csbuild.SetOutput(ExtLibDirectTex.outputName, csbuild.ProjectType.StaticLibrary)
+
+	if csbuild.GetRunMode() == csbuild.RunMode.GenerateSolution:
+		csbuild.AddSourceFiles(
+			f"{ExtLibDirectTex.path}/*.cpp",
+			f"{ExtLibDirectTex.path}/*.h"
+		)
+
+	else:
+		csbuild.AddSourceFiles(
+			f"{ExtLibDirectTex.path}/BC.cpp",
+			f"{ExtLibDirectTex.path}/BC4BC5.cpp",
+			f"{ExtLibDirectTex.path}/BC6HBC7.cpp",
+			f"{ExtLibDirectTex.path}/DirectXTexCompress.cpp",
+			f"{ExtLibDirectTex.path}/DirectXTexConvert.cpp",
+			f"{ExtLibDirectTex.path}/DirectXTexD3D12.cpp",
+			f"{ExtLibDirectTex.path}/DirectXTexDDS.cpp",
+			f"{ExtLibDirectTex.path}/DirectXTexFlipRotate.cpp",
+			f"{ExtLibDirectTex.path}/DirectXTexHDR.cpp",
+			f"{ExtLibDirectTex.path}/DirectXTexImage.cpp",
+			f"{ExtLibDirectTex.path}/DirectXTexMipmaps.cpp",
+			f"{ExtLibDirectTex.path}/DirectXTexMisc.cpp",
+			f"{ExtLibDirectTex.path}/DirectXTexNormalMaps.cpp",
+			f"{ExtLibDirectTex.path}/DirectXTexPMAlpha.cpp",
+			f"{ExtLibDirectTex.path}/DirectXTexResize.cpp",
+			f"{ExtLibDirectTex.path}/DirectXTexTGA.cpp",
+			f"{ExtLibDirectTex.path}/DirectXTexUtil.cpp",
+			f"{ExtLibDirectTex.path}/DirectXTexWIC.cpp",
+		)
+
+	with csbuild.Scope(csbuild.ScopeDef.All):
+		csbuild.AddIncludeDirectories(ExtLibDirectTex.path)
+
+###################################################################################################
+
 class ExtLibImgui(object):
 	projectName = "Ext_Imgui"
 	outputName = "libimgui"
@@ -208,6 +250,23 @@ with csbuild.Project(ExtLibMicroIni.projectName, ExtLibMicroIni.path):
 
 ###################################################################################################
 
+class ExtLibStb(object):
+	projectName = "Ext_Stb"
+	outputName = "libstb"
+	path = "External/stb"
+	projectType = csbuild.ProjectType.StaticLibrary
+
+with csbuild.Project(ExtLibStb.projectName, ExtLibStb.path, autoDiscoverSourceFiles=False):
+	csbuild.SetOutput(ExtLibStb.outputName, csbuild.ProjectType.Stub)
+
+	if csbuild.GetRunMode() == csbuild.RunMode.GenerateSolution:
+		csbuild.AddSourceFiles(f"{ExtLibStb.path}/*.h")
+
+	with csbuild.Scope(csbuild.ScopeDef.Children):
+		csbuild.AddIncludeDirectories(ExtLibStb.path)
+
+###################################################################################################
+
 class ExtLibTinyObjLoader(object):
 	projectName = "Ext_TinyObjLoader"
 	outputName = "libtinyobj"
@@ -218,7 +277,7 @@ with csbuild.Project(ExtLibTinyObjLoader.projectName, ExtLibTinyObjLoader.path, 
 	csbuild.SetOutput(ExtLibTinyObjLoader.outputName, csbuild.ProjectType.StaticLibrary)
 
 	if csbuild.GetRunMode() == csbuild.RunMode.GenerateSolution:
-		csbuild.AddSourceDirectories(ExtLibTinyObjLoader.path)
+		csbuild.AddSourceFiles(f"{ExtLibTinyObjLoader.path}/tiny_obj_loader.*")
 
 	else:
 		csbuild.AddSourceFiles(
@@ -235,8 +294,10 @@ class LibDemoFramework(object):
 	outputName = "libdf"
 	sourcePath = f"{_REPO_ROOT_PATH}/Source"
 	dependencies = [
+		ExtLibDirectTex.projectName,
 		ExtLibImgui.projectName,
 		ExtLibImplot.projectName,
+		ExtLibStb.projectName,
 		ExtLibTinyObjLoader.projectName,
 	]
 
@@ -285,10 +346,10 @@ with csbuild.Project(SampleBasic.projectName, Samples.rootPath, SampleBasic.depe
 
 ###################################################################################################
 
-class SamplePbr(object):
-	projectName = "Sample-PBR"
-	outputName = "pbr-sample"
-	path = f"{Samples.rootPath}/Pbr"
+class SampleDeferred(object):
+	projectName = "Sample-DeferredRendering"
+	outputName = "deferred-sample"
+	path = f"{Samples.rootPath}/Deferred"
 	dependencies = [
 		ExtLibImgui.projectName,
 		ExtLibImplot.projectName,
@@ -296,12 +357,12 @@ class SamplePbr(object):
 		LibDemoFramework.projectName,
 	]
 
-with csbuild.Project(SamplePbr.projectName, Samples.rootPath, SamplePbr.dependencies, autoDiscoverSourceFiles=False):
-	csbuild.SetOutput(SamplePbr.outputName, csbuild.ProjectType.Application)
+with csbuild.Project(SampleDeferred.projectName, Samples.rootPath, SampleDeferred.dependencies, autoDiscoverSourceFiles=False):
+	csbuild.SetOutput(SampleDeferred.outputName, csbuild.ProjectType.Application)
 
 	csbuild.AddSourceDirectories(
 		Samples.commonPath,
-		SamplePbr.path,
+		SampleDeferred.path,
 	)
 
 ###################################################################################################

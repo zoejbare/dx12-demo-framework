@@ -13,3 +13,10 @@
 [submodule "External/tinyobjloader"]
 	path = External/tinyobjloader
 	url = https://github.com/tinyobjloader/tinyobjloader.git
+[submodule "External/stb"]
+	path = External/stb
+	url = https://github.com/nothings/stb.git
+	branch = dev
+[submodule "External/DirectXTex"]
+	path = External/DirectXTex
+	url = https://github.com/microsoft/DirectXTex.git

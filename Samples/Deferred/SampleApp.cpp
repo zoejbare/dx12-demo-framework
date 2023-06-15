@@ -37,8 +37,8 @@
 
 //---------------------------------------------------------------------------------------------------------------------
 
-#define APP_NAME "PBR Sample"
-#define LOG_FILE "pbr-sample.log"
+#define APP_NAME "Deferred Rendering Sample"
+#define LOG_FILE "deferred-sample.log"
 
 #define APP_BACK_BUFFER_COUNT   2
 #define APP_BACK_BUFFER_FORMAT  DXGI_FORMAT_R8G8B8A8_UNORM
@@ -94,7 +94,7 @@ struct Vertex
 };
 
 //---------------------------------------------------------------------------------------------------------------------
-
+#include <DemoFramework/Direct3D12/Texture2D.hpp>
 bool SampleApp::Initialize(DemoFramework::Window* const pWindow)
 {
 	using namespace DemoFramework;
@@ -135,6 +135,14 @@ bool SampleApp::Initialize(DemoFramework::Window* const pWindow)
 	{
 		return false;
 	}
+
+	D3D12::Texture2D::Ptr texture = D3D12::Texture2D::Load(
+		m_renderBase->GetDevice(),
+		m_renderBase->GetCmdQueue(),
+		m_renderBase->GetUploadContext(),
+		D3D12::Texture2D::DataType::Float,
+		D3D12::Texture2D::Channel::RGBA,
+		"D:\\dev\\oss\\dx12-demo-framework\\je_gray_02_4k.hdr");
 
 	// Set the size of the GUI display area.
 	m_gui->SetDisplaySize(pWindow->GetClientWidth(), pWindow->GetClientHeight());
