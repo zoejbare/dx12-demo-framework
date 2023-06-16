@@ -22,19 +22,19 @@
 
 //---------------------------------------------------------------------------------------------------------------------
 
-DemoFramework::D3D12::DevicePtr DemoFramework::D3D12::CreateDevice(const AdapterPtr& pAdapter)
+DemoFramework::D3D12::DevicePtr DemoFramework::D3D12::CreateDevice(const AdapterPtr& adapter)
 {
-	if(!pAdapter)
+	if(!adapter)
 	{
 		LOG_ERROR("Invalid parameter");
 		return nullptr;
 	}
 
-	DevicePtr pOutput;
-	InfoQueuePtr pInfoQueue;
+	DevicePtr output;
+	InfoQueuePtr infoQueue;
 
 	// Create the device using the input display adapter.
-	const HRESULT createDeviceResult = D3D12CreateDevice(pAdapter.Get(), D3D_FEATURE_LEVEL_12_0, IID_PPV_ARGS(&pOutput));
+	const HRESULT createDeviceResult = D3D12CreateDevice(adapter.Get(), D3D_FEATURE_LEVEL_12_0, IID_PPV_ARGS(&output));
 	if(createDeviceResult != S_OK)
 	{
 		LOG_ERROR("Failed to create device; result='0x%08" PRIX32 "'", createDeviceResult);
@@ -42,12 +42,12 @@ DemoFramework::D3D12::DevicePtr DemoFramework::D3D12::CreateDevice(const Adapter
 	}
 
 	// Setup the D3D12 logging interface when the debug layer is enabled.
-	if(SUCCEEDED(pOutput.As(&pInfoQueue)))
+	if(SUCCEEDED(output.As(&infoQueue)))
 	{
 		// Configure the internal logger to break when certain severities are logged.
-		pInfoQueue->SetBreakOnSeverity(D3D12_MESSAGE_SEVERITY_CORRUPTION, true);
-		pInfoQueue->SetBreakOnSeverity(D3D12_MESSAGE_SEVERITY_ERROR, true);
-		pInfoQueue->SetBreakOnSeverity(D3D12_MESSAGE_SEVERITY_WARNING, true);
+		infoQueue->SetBreakOnSeverity(D3D12_MESSAGE_SEVERITY_CORRUPTION, true);
+		infoQueue->SetBreakOnSeverity(D3D12_MESSAGE_SEVERITY_ERROR, true);
+		infoQueue->SetBreakOnSeverity(D3D12_MESSAGE_SEVERITY_WARNING, true);
 
 		// Message severities to ignore.
 		D3D12_MESSAGE_SEVERITY ignoredSeverities[] =
@@ -70,7 +70,7 @@ DemoFramework::D3D12::DevicePtr DemoFramework::D3D12::CreateDevice(const Adapter
 		infoQueueFilter.DenyList.pIDList = ignoredMessageIds;
 
 		// Configure what is allowed to be logged.
-		const HRESULT pushFilterResult = pInfoQueue->PushStorageFilter(&infoQueueFilter);
+		const HRESULT pushFilterResult = infoQueue->PushStorageFilter(&infoQueueFilter);
 		if(pushFilterResult != S_OK)
 		{
 			LOG_ERROR("Failed to push info queue filter; result='0x%08" PRIX32, pushFilterResult);
@@ -78,7 +78,7 @@ DemoFramework::D3D12::DevicePtr DemoFramework::D3D12::CreateDevice(const Adapter
 		}
 	}
 
-	return pOutput;
+	return output;
 }
 
 //---------------------------------------------------------------------------------------------------------------------

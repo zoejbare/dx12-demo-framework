@@ -22,28 +22,28 @@
 
 //---------------------------------------------------------------------------------------------------------------------
 
-DemoFramework::D3D12::AdapterPtr DemoFramework::D3D12::QueryAdapter(const FactoryPtr& pFactory, const bool useWarpAdapter)
+DemoFramework::D3D12::AdapterPtr DemoFramework::D3D12::QueryAdapter(const FactoryPtr& factory, const bool useWarpAdapter)
 {
 	typedef Microsoft::WRL::ComPtr<IDXGIAdapter1> StagingAdapterPtr;
 
-	if(!pFactory)
+	if(!factory)
 	{
 		LOG_ERROR("Invalid parameter");
 		return nullptr;
 	}
 
-	D3D12::AdapterPtr pOutput;
+	D3D12::AdapterPtr output;
 
 	if(useWarpAdapter)
 	{
 		StagingAdapterPtr pStagingAdapter;
 
 		// We can get the WARP adapter directly.
-		pFactory->EnumWarpAdapter(IID_PPV_ARGS(&pStagingAdapter));
+		factory->EnumWarpAdapter(IID_PPV_ARGS(&pStagingAdapter));
 
 		// Safe-cast the staging adapter to the output pointer.
-		pStagingAdapter.As(&pOutput);
-		assert(pOutput != nullptr);
+		pStagingAdapter.As(&output);
+		assert(output != nullptr);
 	}
 	else
 	{
@@ -52,7 +52,7 @@ DemoFramework::D3D12::AdapterPtr DemoFramework::D3D12::QueryAdapter(const Factor
 		size_t maxVramSize = 0;
 
 		// Select a display adapter.
-		for(uint32_t adapterIndex = 0; pFactory->EnumAdapters1(adapterIndex, &pStagingAdapter) != DXGI_ERROR_NOT_FOUND; ++adapterIndex)
+		for(uint32_t adapterIndex = 0; factory->EnumAdapters1(adapterIndex, &pStagingAdapter) != DXGI_ERROR_NOT_FOUND; ++adapterIndex)
 		{
 			DXGI_ADAPTER_DESC1 adapterDesc;
 			pStagingAdapter->GetDesc1(&adapterDesc);
@@ -78,17 +78,17 @@ DemoFramework::D3D12::AdapterPtr DemoFramework::D3D12::QueryAdapter(const Factor
 			maxVramSize = adapterDesc.DedicatedVideoMemory;
 
 			// Safe-cast the staging adapter to the output pointer.
-			pStagingAdapter.As(&pOutput);
-			assert(pOutput != nullptr);
+			pStagingAdapter.As(&output);
+			assert(output != nullptr);
 		}
 	}
 
-	if(!pOutput)
+	if(!output)
 	{
 		LOG_ERROR("Failed to query a usable display adapter");
 	}
 
-	return pOutput;
+	return output;
 }
 
 //---------------------------------------------------------------------------------------------------------------------

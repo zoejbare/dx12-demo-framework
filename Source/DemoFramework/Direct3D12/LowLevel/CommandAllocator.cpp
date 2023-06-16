@@ -22,24 +22,24 @@
 
 //---------------------------------------------------------------------------------------------------------------------
 
-DemoFramework::D3D12::CommandAllocatorPtr DemoFramework::D3D12::CreateCommandAllocator(const DevicePtr& pDevice, const D3D12_COMMAND_LIST_TYPE type)
+DemoFramework::D3D12::CommandAllocatorPtr DemoFramework::D3D12::CreateCommandAllocator(const DevicePtr& device, const D3D12_COMMAND_LIST_TYPE type)
 {
-	if(!pDevice)
+	if(!device)
 	{
 		LOG_ERROR("Invalid parameter");
 		return nullptr;
 	}
 
-	D3D12::CommandAllocatorPtr pOutput;
+	D3D12::CommandAllocatorPtr output;
 
-	const HRESULT result = pDevice->CreateCommandAllocator(type, IID_PPV_ARGS(&pOutput));
+	const HRESULT result = device->CreateCommandAllocator(type, IID_PPV_ARGS(&output));
 	if(result != S_OK)
 	{
 		LOG_ERROR("Failed to create command allocator; result='0x%08" PRIX32 "'", result);
 		return nullptr;
 	}
 
-	return pOutput;
+	return output;
 }
 
 //---------------------------------------------------------------------------------------------------------------------

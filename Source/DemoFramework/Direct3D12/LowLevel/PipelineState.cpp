@@ -23,25 +23,25 @@
 //---------------------------------------------------------------------------------------------------------------------
 
 DemoFramework::D3D12::PipelineStatePtr DemoFramework::D3D12::CreatePipelineState(
-	const DevicePtr& pDevice,
+	const DevicePtr& device,
 	const D3D12_GRAPHICS_PIPELINE_STATE_DESC& desc)
 {
-	if(!pDevice)
+	if(!device)
 	{
 		LOG_ERROR("Invalid parameter");
 		return nullptr;
 	}
 
-	D3D12::PipelineStatePtr pOutput;
+	D3D12::PipelineStatePtr output;
 
-	const HRESULT result = pDevice->CreateGraphicsPipelineState(&desc, IID_PPV_ARGS(&pOutput));
+	const HRESULT result = device->CreateGraphicsPipelineState(&desc, IID_PPV_ARGS(&output));
 	if(result != S_OK)
 	{
 		LOG_ERROR("Failed to create graphics pipeline state; result='0x%08" PRIX32 "'", result);
 		return nullptr;
 	}
 
-	return pOutput;
+	return output;
 }
 
 //---------------------------------------------------------------------------------------------------------------------

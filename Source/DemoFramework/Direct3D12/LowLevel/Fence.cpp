@@ -23,26 +23,26 @@
 //---------------------------------------------------------------------------------------------------------------------
 
 DemoFramework::D3D12::FencePtr DemoFramework::D3D12::CreateFence(
-	const DevicePtr& pDevice,
+	const DevicePtr& device,
 	const D3D12_FENCE_FLAGS flags,
 	const uint64_t initialValue)
 {
-	if(!pDevice)
+	if(!device)
 	{
 		LOG_ERROR("Invalid parameter");
 		return nullptr;
 	}
 
-	D3D12::FencePtr pOutput;
+	D3D12::FencePtr output;
 
-	const HRESULT result = pDevice->CreateFence(initialValue, flags, IID_PPV_ARGS(&pOutput));
+	const HRESULT result = device->CreateFence(initialValue, flags, IID_PPV_ARGS(&output));
 	if(result != S_OK)
 	{
 		LOG_ERROR("Failed to create fence; result='0x%08" PRIX32 "'", result);
 		return nullptr;
 	}
 
-	return pOutput;
+	return output;
 }
 
 //---------------------------------------------------------------------------------------------------------------------

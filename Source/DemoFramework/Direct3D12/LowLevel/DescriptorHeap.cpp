@@ -22,24 +22,24 @@
 
 //---------------------------------------------------------------------------------------------------------------------
 
-DemoFramework::D3D12::DescriptorHeapPtr DemoFramework::D3D12::CreateDescriptorHeap(const DevicePtr& pDevice, const D3D12_DESCRIPTOR_HEAP_DESC& desc)
+DemoFramework::D3D12::DescriptorHeapPtr DemoFramework::D3D12::CreateDescriptorHeap(const DevicePtr& device, const D3D12_DESCRIPTOR_HEAP_DESC& desc)
 {
-	if(!pDevice)
+	if(!device)
 	{
 		LOG_ERROR("Invalid parameter");
 		return nullptr;
 	}
 
-	D3D12::DescriptorHeapPtr pOutput;
+	D3D12::DescriptorHeapPtr output;
 
-	const HRESULT result = pDevice->CreateDescriptorHeap(&desc, IID_PPV_ARGS(&pOutput));
+	const HRESULT result = device->CreateDescriptorHeap(&desc, IID_PPV_ARGS(&output));
 	if(result != S_OK)
 	{
 		LOG_ERROR("Failed to create descriptor heap; result='0x%08" PRIX32 "'", result);
 		return nullptr;
 	}
 
-	return pOutput;
+	return output;
 }
 
 //---------------------------------------------------------------------------------------------------------------------

@@ -22,24 +22,24 @@
 
 //---------------------------------------------------------------------------------------------------------------------
 
-DemoFramework::D3D12::CommandQueuePtr DemoFramework::D3D12::CreateCommandQueue(const DevicePtr& pDevice, const D3D12_COMMAND_QUEUE_DESC& desc)
+DemoFramework::D3D12::CommandQueuePtr DemoFramework::D3D12::CreateCommandQueue(const DevicePtr& device, const D3D12_COMMAND_QUEUE_DESC& desc)
 {
-	if(!pDevice)
+	if(!device)
 	{
 		LOG_ERROR("Invalid parameter");
 		return nullptr;
 	}
 
-	D3D12::CommandQueuePtr pOutput;
+	D3D12::CommandQueuePtr output;
 
-	const HRESULT result = pDevice->CreateCommandQueue(&desc, IID_PPV_ARGS(&pOutput));
+	const HRESULT result = device->CreateCommandQueue(&desc, IID_PPV_ARGS(&output));
 	if(result != S_OK)
 	{
 		LOG_ERROR("Failed to create command queue; result='0x%08" PRIX32 "'", result);
 		return nullptr;
 	}
 
-	return pOutput;
+	return output;
 }
 
 //---------------------------------------------------------------------------------------------------------------------

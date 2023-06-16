@@ -24,7 +24,7 @@
 //---------------------------------------------------------------------------------------------------------------------
 
 namespace DemoFramework { namespace D3D12 {
-	DF_API PipelineStatePtr CreatePipelineState(const DevicePtr& pDevice, const D3D12_GRAPHICS_PIPELINE_STATE_DESC& desc);
+	DF_API PipelineStatePtr CreatePipelineState(const DevicePtr& device, const D3D12_GRAPHICS_PIPELINE_STATE_DESC& desc);
 }}
 
 //---------------------------------------------------------------------------------------------------------------------

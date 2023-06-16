@@ -23,29 +23,29 @@
 //---------------------------------------------------------------------------------------------------------------------
 
 DemoFramework::D3D12::ResourcePtr DemoFramework::D3D12::CreateCommittedResource(
-	const DevicePtr& pDevice,
+	const DevicePtr& device,
 	const D3D12_RESOURCE_DESC& desc,
 	const D3D12_HEAP_PROPERTIES& heapProps,
 	const D3D12_HEAP_FLAGS heapFlags,
 	const D3D12_RESOURCE_STATES states,
 	const D3D12_CLEAR_VALUE* const pOptimizedClearValue)
 {
-	if(!pDevice)
+	if(!device)
 	{
 		LOG_ERROR("Invalid parameter");
 		return nullptr;
 	}
 
-	D3D12::ResourcePtr pOutput;
+	D3D12::ResourcePtr output;
 
-	const HRESULT result = pDevice->CreateCommittedResource(&heapProps, heapFlags, &desc, states, pOptimizedClearValue, IID_PPV_ARGS(&pOutput));
+	const HRESULT result = device->CreateCommittedResource(&heapProps, heapFlags, &desc, states, pOptimizedClearValue, IID_PPV_ARGS(&output));
 	if(result != S_OK)
 	{
 		LOG_ERROR("Failed to create resource; result='0x%08" PRIX32 "'", result);
 		return nullptr;
 	}
 
-	return pOutput;
+	return output;
 }
 
 //---------------------------------------------------------------------------------------------------------------------

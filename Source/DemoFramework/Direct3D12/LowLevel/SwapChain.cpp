@@ -23,14 +23,14 @@
 //---------------------------------------------------------------------------------------------------------------------
 
 DemoFramework::D3D12::SwapChainPtr DemoFramework::D3D12::CreateSwapChain(
-	const FactoryPtr& pFactory,
-	const CommandQueuePtr& pCmdQueue,
+	const FactoryPtr& factory,
+	const CommandQueuePtr& cmdQueue,
 	const DXGI_SWAP_CHAIN_DESC1& desc,
 	HWND hWnd)
 {
-	typedef Microsoft::WRL::ComPtr<IDXGISwapChain1> StagingSwapChain;
+	typedef Microsoft::WRL::ComPtr<IDXGISwapChain1> StagingSwapChainPtr;
 
-	if(!pFactory || !pCmdQueue)
+	if(!factory || !cmdQueue)
 	{
 		LOG_ERROR("Invalid parameter");
 		return nullptr;
@@ -42,30 +42,30 @@ DemoFramework::D3D12::SwapChainPtr DemoFramework::D3D12::CreateSwapChain(
 		return nullptr;
 	}
 
-	StagingSwapChain pStaging;
-	D3D12::SwapChainPtr pOutput;
+	StagingSwapChainPtr staging;
+	D3D12::SwapChainPtr output;
 
-	const HRESULT createResult = pFactory->CreateSwapChainForHwnd(pCmdQueue.Get(), hWnd, &desc, nullptr, nullptr, &pStaging);
+	const HRESULT createResult = factory->CreateSwapChainForHwnd(cmdQueue.Get(), hWnd, &desc, nullptr, nullptr, &staging);
 	if(createResult != S_OK)
 	{
 		LOG_ERROR("Failed to create swap chain; result='0x%08" PRIX32 "'", createResult);
 		return nullptr;
 	}
 
-	if(!SUCCEEDED(pStaging.As(&pOutput)))
+	if(!SUCCEEDED(staging.As(&output)))
 	{
 		LOG_ERROR("Failed to query IDXGISwapChain4 interface");
 		return nullptr;
 	}
 
-	const HRESULT makeAssocResult = pFactory->MakeWindowAssociation(hWnd, DXGI_MWA_NO_ALT_ENTER);
+	const HRESULT makeAssocResult = factory->MakeWindowAssociation(hWnd, DXGI_MWA_NO_ALT_ENTER);
 	if(makeAssocResult != S_OK)
 	{
-		LOG_ERROR("Failed to make window association to swap chain; result='0x%08" PRIX32 "'", makeAssocResult);
+		LOG_ERROR("Failed to make window association with swap chain; result='0x%08" PRIX32 "'", makeAssocResult);
 		return nullptr;
 	}
 
-	return pOutput;
+	return output;
 }
 
 //---------------------------------------------------------------------------------------------------------------------

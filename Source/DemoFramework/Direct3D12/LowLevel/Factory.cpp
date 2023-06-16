@@ -30,27 +30,27 @@ DemoFramework::D3D12::FactoryPtr DemoFramework::D3D12::CreateFactory()
 
 #ifndef _DF_CONFIG_RELEASE
 	{
-		Microsoft::WRL::ComPtr<ID3D12Debug> pDebugInterface;
+		Microsoft::WRL::ComPtr<ID3D12Debug> debugInterface;
 
-		if(SUCCEEDED(D3D12GetDebugInterface(IID_PPV_ARGS(&pDebugInterface))))
+		if(SUCCEEDED(D3D12GetDebugInterface(IID_PPV_ARGS(&debugInterface))))
 		{
-			pDebugInterface->EnableDebugLayer();
+			debugInterface->EnableDebugLayer();
 
 			flags |= DXGI_CREATE_FACTORY_DEBUG;
 		}
 	}
 #endif
 
-	D3D12::FactoryPtr pOutput;
+	D3D12::FactoryPtr output;
 
-	const HRESULT result = CreateDXGIFactory2(flags, IID_PPV_ARGS(&pOutput));
+	const HRESULT result = CreateDXGIFactory2(flags, IID_PPV_ARGS(&output));
 	if(result != S_OK)
 	{
 		LOG_ERROR("Failed to create factory; result='0x%08" PRIX32 "'", result);
 		return nullptr;
 	}
 
-	return pOutput;
+	return output;
 }
 
 //---------------------------------------------------------------------------------------------------------------------

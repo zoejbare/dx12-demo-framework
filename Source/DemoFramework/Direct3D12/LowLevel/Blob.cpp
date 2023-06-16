@@ -26,16 +26,16 @@
 
 DemoFramework::D3D12::BlobPtr DemoFramework::D3D12::CreateBlob(const size_t size)
 {
-	BlobPtr pOutput;
+	BlobPtr output;
 
-	const HRESULT result = D3DCreateBlob(size, &pOutput);
+	const HRESULT result = D3DCreateBlob(size, &output);
 	if(result != S_OK)
 	{
 		LOG_ERROR("Failed to create D3D blob; result='0x%08" PRIX32 "'", result);
 		return nullptr;
 	}
 
-	return pOutput;
+	return output;
 }
 
 //---------------------------------------------------------------------------------------------------------------------

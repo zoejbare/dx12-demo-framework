@@ -23,27 +23,27 @@
 //---------------------------------------------------------------------------------------------------------------------
 
 DemoFramework::D3D12::GraphicsCommandListPtr DemoFramework::D3D12::CreateGraphicsCommandList(
-	const DevicePtr& pDevice,
-	const CommandAllocatorPtr& pCmdAlloc,
+	const DevicePtr& device,
+	const CommandAllocatorPtr& cmdAlloc,
 	const D3D12_COMMAND_LIST_TYPE type,
 	const uint32_t nodeMask)
 {
-	if(!pDevice)
+	if(!device || !cmdAlloc)
 	{
 		LOG_ERROR("Invalid parameter");
 		return nullptr;
 	}
 
-	D3D12::GraphicsCommandListPtr pOutput;
+	D3D12::GraphicsCommandListPtr output;
 
-	const HRESULT result = pDevice->CreateCommandList(nodeMask, type, pCmdAlloc.Get(), nullptr, IID_PPV_ARGS(&pOutput));
+	const HRESULT result = device->CreateCommandList(nodeMask, type, cmdAlloc.Get(), nullptr, IID_PPV_ARGS(&output));
 	if(result != S_OK)
 	{
 		LOG_ERROR("Failed to create graphics command list; result='0x%08" PRIX32 "'", result);
 		return nullptr;
 	}
 
-	return pOutput;
+	return output;
 }
 
 //---------------------------------------------------------------------------------------------------------------------

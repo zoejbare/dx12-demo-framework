@@ -25,8 +25,8 @@
 
 namespace DemoFramework { namespace D3D12 {
 	DF_API SwapChainPtr CreateSwapChain(
-		const FactoryPtr& pFactory,
-		const CommandQueuePtr& pCmdQueue,
+		const FactoryPtr& factory,
+		const CommandQueuePtr& cmdQueue,
 		const DXGI_SWAP_CHAIN_DESC1& desc,
 		HWND hWnd);
 }}
