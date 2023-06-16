@@ -453,13 +453,13 @@ bool SampleApp::prv_loadShaders()
 {
 	using namespace DemoFramework;
 
-	m_vertexShader = D3D12::LoadShaderFromFile("shaders/basic.vs.hlsl.bin");
+	m_vertexShader = D3D12::LoadShaderFromFile("shaders/basic/quad.vs.sbin");
 	if(!m_vertexShader)
 	{
 		return false;
 	}
 
-	m_pixelShader = D3D12::LoadShaderFromFile("shaders/basic.ps.hlsl.bin");
+	m_pixelShader = D3D12::LoadShaderFromFile("shaders/basic/quad.ps.sbin");
 	if(!m_pixelShader)
 	{
 		return false;

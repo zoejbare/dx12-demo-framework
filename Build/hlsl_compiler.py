@@ -53,7 +53,7 @@ class HlslCompiler(
 	supportedPlatforms = { "Windows" }
 	supportedArchitectures = { "x86", "x64", "arm64" }
 	inputFiles = { ".hlsl" }
-	outputFiles = { ".bin", ".pdb" }
+	outputFiles = { ".sbin", ".pdb" }
 
 	def __init__(self, projectSettings):
 		MsvcToolBase.__init__(self, projectSettings)
@@ -62,6 +62,7 @@ class HlslCompiler(
 
 		self._outputPath = None
 
+		self._hlslContext = projectSettings.get("hlslContext", None)
 		self._defines = projectSettings.get("hlslDefines", ordered_set.OrderedSet())
 		self._includeDirectories = projectSettings.get("hlslIncludeDirectories", ordered_set.OrderedSet())
 
@@ -82,6 +83,11 @@ class HlslCompiler(
 		self._customFlags = projectSettings.get("customFlags", [])
 
 		self._exePath = None
+		
+	@staticmethod
+	@TypeChecked(context=str)
+	def SetHlslContext(context):
+		csbuild.currentPlan.SetValue("hlslContext", context)
 
 	@staticmethod
 	def AddHlslDefines(*defines):
@@ -162,6 +168,9 @@ class HlslCompiler(
 		# Construct the output path.
 		self._outputPath = os.path.normpath(f"{project.outputDir}/shaders")
 
+		if self._hlslContext:
+			self._outputPath = os.path.normpath(f"{self._outputPath}/{self._hlslContext}")
+
 		# Create the output path if it doesn't already exist.
 		if not os.access(self._outputPath, os.F_OK):
 			os.makedirs(self._outputPath)
@@ -201,9 +210,11 @@ class HlslCompiler(
 		return self._getOutputFiles(inputProject, inputFile)
 
 	def _getOutputFiles(self, project, inputFile):
-		inputBaseName = os.path.basename(inputFile.filename)
+		_ignore(project)
+
+		inputBaseName = os.path.splitext(os.path.basename(inputFile.filename))[0]
 		outputPath = os.path.normpath(f"{self._outputPath}/{inputBaseName}")
-		outputFiles = [f"{outputPath}.bin"]
+		outputFiles = [f"{outputPath}.sbin"]
 
 		if self._debugLevel in [DebugLevel.ExternalSymbols, DebugLevel.ExternalSymbolsPlus]:
 			outputFiles.append(f"{outputPath}.pdb")
@@ -300,7 +311,7 @@ class HlslCompiler(
 	def _getOutputFileArgs(self, project, inputFile):
 		outputFiles = self._getOutputFiles(project, inputFile)
 
-		outputFilePaths = [x for x in outputFiles if x.endswith(".bin")]
+		outputFilePaths = [x for x in outputFiles if x.endswith(".sbin")]
 		debugInfoFilePaths = [x for x in outputFiles if x.endswith(".pdb")]
 
 		args = ["-Fo", outputFilePaths[0]]

@@ -338,6 +338,7 @@ class SampleBasic(object):
 
 with csbuild.Project(SampleBasic.projectName, Samples.rootPath, SampleBasic.dependencies, autoDiscoverSourceFiles=False):
 	csbuild.SetOutput(SampleBasic.outputName, csbuild.ProjectType.Application)
+	csbuild.SetHlslContext("basic")
 
 	csbuild.AddSourceDirectories(
 		Samples.commonPath,
@@ -359,6 +360,7 @@ class SampleDeferred(object):
 
 with csbuild.Project(SampleDeferred.projectName, Samples.rootPath, SampleDeferred.dependencies, autoDiscoverSourceFiles=False):
 	csbuild.SetOutput(SampleDeferred.outputName, csbuild.ProjectType.Application)
+	csbuild.SetHlslContext("deferred")
 
 	csbuild.AddSourceDirectories(
 		Samples.commonPath,
