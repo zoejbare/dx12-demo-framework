@@ -61,17 +61,10 @@ public:
 
 private:
 
-	bool prv_createConstBuffer();
-
 	DemoFramework::Window* m_pWindow;
 
 	DemoFramework::D3D12::RenderBase::Ptr m_renderBase;
 	DemoFramework::D3D12::Gui::Ptr m_gui;
-
-	DemoFramework::D3D12::DescriptorHeapPtr m_vertexShaderDescHeap;
-
-	DemoFramework::D3D12::ResourcePtr m_constBuffer;
-	DemoFramework::D3D12::ResourcePtr m_stagingConstBuffer[DF_SWAP_CHAIN_BUFFER_MAX_COUNT];
 
 	DemoFramework::FrameTimer m_frameTimer;
 
@@ -89,9 +82,6 @@ inline SampleApp::SampleApp()
 	: m_pWindow()
 	, m_renderBase()
 	, m_gui()
-	, m_vertexShaderDescHeap()
-	, m_constBuffer()
-	, m_stagingConstBuffer()
 	, m_frameTimer()
 	, m_worldMatrix()
 	, m_viewMatrix()

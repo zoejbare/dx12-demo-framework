@@ -24,7 +24,7 @@
 //---------------------------------------------------------------------------------------------------------------------
 
 namespace DemoFramework { namespace D3D12 {
-	DF_API AdapterPtr QueryAdapter(const FactoryPtr& factory, bool useWarpAdapter);
+	DF_API Adapter::Ptr QueryAdapter(const Factory::Ptr& factory, bool useWarpAdapter);
 }}
 
 //---------------------------------------------------------------------------------------------------------------------

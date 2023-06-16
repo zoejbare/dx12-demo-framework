@@ -75,7 +75,7 @@ DemoFramework::D3D12::RenderBase::Ptr DemoFramework::D3D12::RenderBase::Create(
 	}
 
 	// Creat the DXGI factor.
-	D3D12::FactoryPtr pFactory = D3D12::CreateFactory();
+	D3D12::Factory::Ptr pFactory = D3D12::CreateFactory();
 	if(!pFactory)
 	{
 		return Ptr();
@@ -103,7 +103,7 @@ DemoFramework::D3D12::RenderBase::Ptr DemoFramework::D3D12::RenderBase::Create(
 	}
 
 	// Find a usable DXGI adapter.
-	D3D12::AdapterPtr pAdapter = D3D12::QueryAdapter(pFactory, false);
+	D3D12::Adapter::Ptr pAdapter = D3D12::QueryAdapter(pFactory, false);
 	if(!pAdapter)
 	{
 		return Ptr();

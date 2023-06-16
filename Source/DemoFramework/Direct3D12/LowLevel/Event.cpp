@@ -42,7 +42,7 @@ struct D3DEventImpl
 
 //---------------------------------------------------------------------------------------------------------------------
 
-DemoFramework::D3D12::EventPtr DemoFramework::D3D12::CreateEvent(
+DemoFramework::D3D12::Event::Ptr DemoFramework::D3D12::CreateEvent(
 	SECURITY_ATTRIBUTES* const pEventAttr,
 	const bool manualReset,
 	const bool initialState,
@@ -61,7 +61,7 @@ DemoFramework::D3D12::EventPtr DemoFramework::D3D12::CreateEvent(
 	pOutput->m_handle = handle;
 	pOutput->m_ref = 1;
 
-	EventPtr output;
+	Event::Ptr output;
 	output.Attach(pOutput);
 
 	return output;

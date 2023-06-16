@@ -26,7 +26,7 @@
 //---------------------------------------------------------------------------------------------------------------------
 
 DemoFramework::D3D12::DepthTarget::Ptr DemoFramework::D3D12::DepthTarget::Create(
-	const DevicePtr& device,
+	const Device::Ptr& device,
 	const uint32_t width,
 	const uint32_t height,
 	const DXGI_FORMAT format)

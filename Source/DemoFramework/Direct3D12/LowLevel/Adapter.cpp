@@ -22,7 +22,7 @@
 
 //---------------------------------------------------------------------------------------------------------------------
 
-DemoFramework::D3D12::AdapterPtr DemoFramework::D3D12::QueryAdapter(const FactoryPtr& factory, const bool useWarpAdapter)
+DemoFramework::D3D12::Adapter::Ptr DemoFramework::D3D12::QueryAdapter(const Factory::Ptr& factory, const bool useWarpAdapter)
 {
 	typedef Microsoft::WRL::ComPtr<IDXGIAdapter1> StagingAdapterPtr;
 
@@ -32,7 +32,7 @@ DemoFramework::D3D12::AdapterPtr DemoFramework::D3D12::QueryAdapter(const Factor
 		return nullptr;
 	}
 
-	D3D12::AdapterPtr output;
+	D3D12::Adapter::Ptr output;
 
 	if(useWarpAdapter)
 	{

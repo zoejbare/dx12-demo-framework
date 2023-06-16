@@ -22,7 +22,9 @@
 
 //---------------------------------------------------------------------------------------------------------------------
 
-DemoFramework::D3D12::CommandAllocatorPtr DemoFramework::D3D12::CreateCommandAllocator(const DevicePtr& device, const D3D12_COMMAND_LIST_TYPE type)
+DemoFramework::D3D12::CommandAllocator::Ptr DemoFramework::D3D12::CreateCommandAllocator(
+	const Device::Ptr& device,
+	const D3D12_COMMAND_LIST_TYPE type)
 {
 	if(!device)
 	{
@@ -30,7 +32,7 @@ DemoFramework::D3D12::CommandAllocatorPtr DemoFramework::D3D12::CreateCommandAll
 		return nullptr;
 	}
 
-	D3D12::CommandAllocatorPtr output;
+	D3D12::CommandAllocator::Ptr output;
 
 	const HRESULT result = device->CreateCommandAllocator(type, IID_PPV_ARGS(&output));
 	if(result != S_OK)

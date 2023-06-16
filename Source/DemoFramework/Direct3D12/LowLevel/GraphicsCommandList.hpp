@@ -24,9 +24,9 @@
 //---------------------------------------------------------------------------------------------------------------------
 
 namespace DemoFramework { namespace D3D12 {
-	DF_API GraphicsCommandListPtr CreateGraphicsCommandList(
-		const DevicePtr& device,
-		const CommandAllocatorPtr& cmdAlloc,
+	DF_API GraphicsCommandList::Ptr CreateGraphicsCommandList(
+		const Device::Ptr& device,
+		const CommandAllocator::Ptr& cmdAlloc,
 		D3D12_COMMAND_LIST_TYPE type,
 		uint32_t nodeMask
 	);

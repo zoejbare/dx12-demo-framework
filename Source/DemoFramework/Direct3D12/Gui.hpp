@@ -57,10 +57,10 @@ public:
 	Gui& operator =(const Gui&) = delete;
 	Gui& operator =(Gui&&) = delete;
 
-	static Ptr Create(const DevicePtr& device, const char* demoName, uint32_t bufferCount, DXGI_FORMAT renderTargetFormat);
+	static Ptr Create(const Device::Ptr& device, const char* demoName, uint32_t bufferCount, DXGI_FORMAT renderTargetFormat);
 
 	void Update(float64_t deltaTime, CustomGuiDrawFn customGuiDraw = nullptr);
-	void Render(const GraphicsCommandListPtr& cmdList);
+	void Render(const GraphicsCommandList::Ptr& cmdList);
 
 	void SetDisplaySize(uint32_t width, uint32_t height);
 	void SetMousePosition(int32_t positionX, int32_t positionY);
@@ -98,7 +98,7 @@ private:
 	FrameTimePlot m_frameTimePlot;
 	DeltaTime m_deltaTime;
 
-	DescriptorHeapPtr m_fontSrvHeap;
+	DescriptorHeap::Ptr m_fontSrvHeap;
 
 	ImGuiContext* m_pGuiContext;
 	ImPlotContext* m_pPlotContext;

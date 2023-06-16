@@ -22,7 +22,9 @@
 
 //---------------------------------------------------------------------------------------------------------------------
 
-DemoFramework::D3D12::RootSignaturePtr DemoFramework::D3D12::CreateRootSignature(const DevicePtr& device, const D3D12_ROOT_SIGNATURE_DESC& desc)
+DemoFramework::D3D12::RootSignature::Ptr DemoFramework::D3D12::CreateRootSignature(
+	const Device::Ptr& device,
+	const D3D12_ROOT_SIGNATURE_DESC& desc)
 {
 	if(!device)
 	{
@@ -39,8 +41,8 @@ DemoFramework::D3D12::RootSignaturePtr DemoFramework::D3D12::CreateRootSignature
 
 //---------------------------------------------------------------------------------------------------------------------
 
-DemoFramework::D3D12::RootSignaturePtr DemoFramework::D3D12::CreateVersionedRootSignature(
-	const DevicePtr& device,
+DemoFramework::D3D12::RootSignature::Ptr DemoFramework::D3D12::CreateVersionedRootSignature(
+	const Device::Ptr& device,
 	const D3D12_VERSIONED_ROOT_SIGNATURE_DESC& desc)
 {
 	if(!device)
@@ -49,8 +51,8 @@ DemoFramework::D3D12::RootSignaturePtr DemoFramework::D3D12::CreateVersionedRoot
 		return nullptr;
 	}
 
-	D3D12::BlobPtr signature;
-	D3D12::BlobPtr error;
+	D3D12::Blob::Ptr signature;
+	D3D12::Blob::Ptr error;
 
 	const HRESULT serializeResult = D3D12SerializeVersionedRootSignature(&desc, &signature, &error);
 	if(serializeResult != S_OK)
@@ -87,7 +89,7 @@ DemoFramework::D3D12::RootSignaturePtr DemoFramework::D3D12::CreateVersionedRoot
 		return nullptr;
 	}
 
-	D3D12::RootSignaturePtr output;
+	D3D12::RootSignature::Ptr output;
 
 	const HRESULT createResult = device->CreateRootSignature(0, signature->GetBufferPointer(), signature->GetBufferSize(), IID_PPV_ARGS(&output));
 	if(createResult != S_OK)

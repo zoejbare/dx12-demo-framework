@@ -22,8 +22,8 @@
 
 //---------------------------------------------------------------------------------------------------------------------
 
-DemoFramework::D3D12::FencePtr DemoFramework::D3D12::CreateFence(
-	const DevicePtr& device,
+DemoFramework::D3D12::Fence::Ptr DemoFramework::D3D12::CreateFence(
+	const Device::Ptr& device,
 	const D3D12_FENCE_FLAGS flags,
 	const uint64_t initialValue)
 {
@@ -33,7 +33,7 @@ DemoFramework::D3D12::FencePtr DemoFramework::D3D12::CreateFence(
 		return nullptr;
 	}
 
-	D3D12::FencePtr output;
+	D3D12::Fence::Ptr output;
 
 	const HRESULT result = device->CreateFence(initialValue, flags, IID_PPV_ARGS(&output));
 	if(result != S_OK)

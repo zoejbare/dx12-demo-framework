@@ -24,8 +24,8 @@
 //---------------------------------------------------------------------------------------------------------------------
 
 namespace DemoFramework { namespace D3D12 {
-	DF_API RootSignaturePtr CreateRootSignature(const DevicePtr& device, const D3D12_ROOT_SIGNATURE_DESC& desc);
-	DF_API RootSignaturePtr CreateVersionedRootSignature(const DevicePtr& device, const D3D12_VERSIONED_ROOT_SIGNATURE_DESC& desc);
+	DF_API RootSignature::Ptr CreateRootSignature(const Device::Ptr& device, const D3D12_ROOT_SIGNATURE_DESC& desc);
+	DF_API RootSignature::Ptr CreateVersionedRootSignature(const Device::Ptr& device, const D3D12_VERSIONED_ROOT_SIGNATURE_DESC& desc);
 }}
 
 //---------------------------------------------------------------------------------------------------------------------

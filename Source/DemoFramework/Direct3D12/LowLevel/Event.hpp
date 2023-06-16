@@ -27,7 +27,7 @@
 
 
 namespace DemoFramework { namespace D3D12 {
-	EventPtr CreateEvent(SECURITY_ATTRIBUTES* const pEventAttr, bool manualReset, bool initialState, const char* name);
+	Event::Ptr CreateEvent(SECURITY_ATTRIBUTES* const pEventAttr, bool manualReset, bool initialState, const char* name);
 }}
 
 //---------------------------------------------------------------------------------------------------------------------

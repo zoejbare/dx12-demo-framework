@@ -63,7 +63,7 @@ DemoFramework::D3D12::Gui::~Gui()
 //---------------------------------------------------------------------------------------------------------------------
 
 DemoFramework::D3D12::Gui::Ptr DemoFramework::D3D12::Gui::Create(
-	const DevicePtr& device,
+	const Device::Ptr& device,
 	const char* const demoName,
 	const uint32_t bufferCount,
 	const DXGI_FORMAT renderTargetFormat)
@@ -303,7 +303,7 @@ void DemoFramework::D3D12::Gui::Update(const float64_t deltaTime, CustomGuiDrawF
 
 //---------------------------------------------------------------------------------------------------------------------
 
-void DemoFramework::D3D12::Gui::Render(const GraphicsCommandListPtr& cmdList)
+void DemoFramework::D3D12::Gui::Render(const GraphicsCommandList::Ptr& cmdList)
 {
 	using namespace DirectX;
 

@@ -47,54 +47,8 @@
 #define M_PI  3.1415926535897932384626433832795f
 #define M_TAU (M_PI * 2.0f)
 
-constexpr DXGI_SAMPLE_DESC defaultSampleDesc =
-{
-	1, // UINT Count
-	0, // UINT Quality
-};
-
-constexpr D3D12_RANGE disabledCpuReadRange =
-{
-	0, // SIZE_T Begin
-	0, // SIZE_T End
-};
-
-constexpr D3D12_HEAP_PROPERTIES uploadHeapProps =
-{
-	D3D12_HEAP_TYPE_UPLOAD,          // D3D12_HEAP_TYPE Type
-	D3D12_CPU_PAGE_PROPERTY_UNKNOWN, // D3D12_CPU_PAGE_PROPERTY CPUPageProperty
-	D3D12_MEMORY_POOL_UNKNOWN,       // D3D12_MEMORY_POOL MemoryPoolPreference
-	0,                               // UINT CreationNodeMask
-	0,                               // UINT VisibleNodeMask
-};
-
-constexpr D3D12_HEAP_PROPERTIES defaultHeapProps =
-{
-	D3D12_HEAP_TYPE_DEFAULT,         // D3D12_HEAP_TYPE Type
-	D3D12_CPU_PAGE_PROPERTY_UNKNOWN, // D3D12_CPU_PAGE_PROPERTY CPUPageProperty
-	D3D12_MEMORY_POOL_UNKNOWN,       // D3D12_MEMORY_POOL MemoryPoolPreference
-	0,                               // UINT CreationNodeMask
-	0,                               // UINT VisibleNodeMask
-};
-
-struct VertexPosition
-{
-	float32_t x, y, z;
-};
-
-struct VertexColor
-{
-	float32_t r, g, b, a;
-};
-
-struct Vertex
-{
-	VertexPosition pos;
-	VertexColor color;
-};
-
 //---------------------------------------------------------------------------------------------------------------------
-#include <DemoFramework/Direct3D12/Texture2D.hpp>
+
 bool SampleApp::Initialize(DemoFramework::Window* const pWindow)
 {
 	using namespace DemoFramework;
@@ -130,20 +84,6 @@ bool SampleApp::Initialize(DemoFramework::Window* const pWindow)
 		return false;
 	}
 
-	// Initialize the constant buffer resources.
-	if(!prv_createConstBuffer())
-	{
-		return false;
-	}
-
-	D3D12::Texture2D::Ptr texture = D3D12::Texture2D::Load(
-		m_renderBase->GetDevice(),
-		m_renderBase->GetCmdQueue(),
-		m_renderBase->GetUploadContext(),
-		D3D12::Texture2D::DataType::Float,
-		D3D12::Texture2D::Channel::RGBA,
-		"D:\\dev\\oss\\dx12-demo-framework\\je_gray_02_4k.hdr");
-
 	// Set the size of the GUI display area.
 	m_gui->SetDisplaySize(pWindow->GetClientWidth(), pWindow->GetClientHeight());
 
@@ -171,26 +111,6 @@ bool SampleApp::Update()
 
 	m_frameTimer.Update();
 
-	static float32_t rotation = 0.0f;
-
-	const uint32_t clientWidth = m_pWindow->GetClientWidth();
-	const uint32_t clientHeight = m_pWindow->GetClientHeight();
-
-	XMVECTOR cameraPosition = XMVectorSet(0.0f, 0.0f, -1.0f, 0.0f);
-	XMVECTOR cameraForward = XMVectorSet(0.0f, 0.0f, 1.0f, 0.0f);
-	XMVECTOR cameraUp = XMVectorSet(0.0f, 1.0f, 0.0f, 0.0f);
-
-	m_worldMatrix = XMMatrixRotationAxis(cameraForward, rotation);
-	m_viewMatrix = XMMatrixLookToLH(cameraPosition, cameraForward, cameraUp);
-	m_projMatrix = XMMatrixPerspectiveFovLH(M_PI * 0.5f, float32_t(clientWidth) / float32_t(clientHeight), 0.1f, 1000.0f);
-	m_wvpMatrix = XMMatrixMultiply(XMMatrixMultiply(m_worldMatrix, m_viewMatrix), m_projMatrix);
-
-	rotation += M_TAU * float32_t(m_frameTimer.GetDeltaTime()) * 0.1f;
-	if(rotation >= M_TAU)
-	{
-		rotation -= M_TAU;
-	}
-
 	m_gui->Update(
 		m_frameTimer.GetDeltaTime(),
 		[](ImGuiContext* const pGuiContext)
@@ -213,7 +133,6 @@ void SampleApp::Render()
 
 	const uint32_t clientWidth = m_pWindow->GetClientWidth();
 	const uint32_t clientHeight = m_pWindow->GetClientHeight();
-	const uint32_t bufferIndex = m_renderBase->GetBufferIndex();
 
 	m_renderBase->BeginFrame();
 	m_renderBase->SetBackBufferAsRenderTarget();
@@ -221,38 +140,6 @@ void SampleApp::Render()
 	// The swap chain buffer index is updated during the call to BeginFrame(),
 	// so we need to wait until *after* that to get the current command list.
 	ID3D12GraphicsCommandList* const pCmdList = m_renderBase->GetDrawContext()->GetCmdList().Get();
-
-	void* pConstData = nullptr;
-
-	// Map the staging buffer to CPU-accessible memory (write-only access) and copy the constant data to it.
-	const D3D12_RANGE dummyReadRange = {0, 0};
-	const HRESULT result = m_stagingConstBuffer[bufferIndex]->Map(0, &dummyReadRange, &pConstData);
-	if(result == S_OK)
-	{
-		memcpy(pConstData, &m_wvpMatrix, sizeof(m_wvpMatrix));
-		m_stagingConstBuffer[bufferIndex]->Unmap(0, nullptr);
-	}
-
-	D3D12_RESOURCE_BARRIER constBufferBeginBarrier, constBufferEndBarrier;
-
-	constBufferBeginBarrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
-	constBufferBeginBarrier.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
-	constBufferBeginBarrier.Transition.pResource = m_constBuffer.Get();
-	constBufferBeginBarrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
-	constBufferBeginBarrier.Transition.StateBefore = D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER;
-	constBufferBeginBarrier.Transition.StateAfter = D3D12_RESOURCE_STATE_COPY_DEST;
-
-	constBufferEndBarrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
-	constBufferEndBarrier.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
-	constBufferEndBarrier.Transition.pResource = m_constBuffer.Get();
-	constBufferEndBarrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
-	constBufferEndBarrier.Transition.StateBefore = D3D12_RESOURCE_STATE_COPY_DEST;
-	constBufferEndBarrier.Transition.StateAfter = D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER;
-
-	// Initiate a copy of constant buffer data from staging memory.
-	pCmdList->ResourceBarrier(1, &constBufferBeginBarrier);
-	pCmdList->CopyResource(m_constBuffer.Get(), m_stagingConstBuffer[bufferIndex].Get());
-	pCmdList->ResourceBarrier(1, &constBufferEndBarrier);
 
 	// Set the screen viewport.
 	const D3D12_VIEWPORT viewport =
@@ -286,15 +173,6 @@ void SampleApp::Render()
 
 void SampleApp::Shutdown()
 {
-	// Clean up the application render resources.
-	m_vertexShaderDescHeap.Reset();
-	m_constBuffer.Reset();
-
-	for(size_t i = 0; i < DF_SWAP_CHAIN_BUFFER_MAX_COUNT; ++i)
-	{
-		m_stagingConstBuffer[i].Reset();
-	}
-
 	// Clean up the common render resources last.
 	m_gui.reset();
 	m_renderBase.reset();
@@ -398,85 +276,6 @@ const char* SampleApp::GetAppName() const
 const char* SampleApp::GetLogFilename() const
 {
 	return LOG_FILE;
-}
-
-//---------------------------------------------------------------------------------------------------------------------
-
-bool SampleApp::prv_createConstBuffer()
-{
-	using namespace DemoFramework;
-
-	LOG_WRITE("Creating constant buffer resources ...");
-
-	const D3D12::DevicePtr& pDevice = m_renderBase->GetDevice();
-
-	// Constant buffers are required to have a size that is 256-byte aligned.
-	const D3D12_RESOURCE_DESC constBufferDesc =
-	{
-		D3D12_RESOURCE_DIMENSION_BUFFER,            // D3D12_RESOURCE_DIMENSION Dimension
-		D3D12_DEFAULT_RESOURCE_PLACEMENT_ALIGNMENT, // UINT64 Alignment
-		(sizeof(DirectX::XMMATRIX) + 255) & ~255,   // UINT64 Width
-		1,                                          // UINT Height
-		1,                                          // UINT16 DepthOrArraySize
-		1,                                          // UINT16 MipLevels
-		DXGI_FORMAT_UNKNOWN,                        // DXGI_FORMAT Format
-		defaultSampleDesc,                          // DXGI_SAMPLE_DESC SampleDesc
-		D3D12_TEXTURE_LAYOUT_ROW_MAJOR,             // D3D12_TEXTURE_LAYOUT Layout
-		D3D12_RESOURCE_FLAG_NONE,                   // D3D12_RESOURCE_FLAGS Flags
-	};
-
-	// Create the constant buffer.
-	m_constBuffer = D3D12::CreateCommittedResource(
-		pDevice,
-		constBufferDesc,
-		defaultHeapProps,
-		D3D12_HEAP_FLAG_NONE,
-		D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER);
-	if(!m_constBuffer)
-	{
-		return false;
-	}
-
-	// Create each staging constant buffer.
-	for(size_t i = 0; i < APP_BACK_BUFFER_COUNT; ++i)
-	{
-		m_stagingConstBuffer[i] = D3D12::CreateCommittedResource(
-			pDevice,
-			constBufferDesc,
-			uploadHeapProps,
-			D3D12_HEAP_FLAG_NONE,
-			D3D12_RESOURCE_STATE_GENERIC_READ);
-		if(!m_stagingConstBuffer[i])
-		{
-			return false;
-		}
-	}
-
-	const D3D12_DESCRIPTOR_HEAP_DESC vertexShaderDescHeapDesc =
-	{
-		D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV,    // D3D12_DESCRIPTOR_HEAP_TYPE Type
-		1,                                         // UINT NumDescriptors
-		D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE, // D3D12_DESCRIPTOR_HEAP_FLAGS Flags
-		0,                                         // UINT NodeMask
-	};
-
-	// Create the descriptor heap for the vertex shader resource inputs.
-	m_vertexShaderDescHeap = D3D12::CreateDescriptorHeap(pDevice, vertexShaderDescHeapDesc);
-	if(!m_vertexShaderDescHeap)
-	{
-		return false;
-	}
-
-	const D3D12_CONSTANT_BUFFER_VIEW_DESC constBufferViewDesc =
-	{
-		m_constBuffer->GetGPUVirtualAddress(),    // D3D12_GPU_VIRTUAL_ADDRESS BufferLocation
-		uint32_t(m_constBuffer->GetDesc().Width), // UINT SizeInBytes
-	};
-
-	// Create the constant buffer view for the vertex shader.
-	pDevice->CreateConstantBufferView(&constBufferViewDesc, m_vertexShaderDescHeap->GetCPUDescriptorHandleForHeapStart());
-
-	return true;
 }
 
 //---------------------------------------------------------------------------------------------------------------------

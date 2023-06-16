@@ -77,8 +77,8 @@ constexpr D3D12_RANGE disabledCpuReadRange =
 //---------------------------------------------------------------------------------------------------------------------
 
 DemoFramework::D3D12::Model::Ptr DemoFramework::D3D12::Model::CreateFromObj(
-	const DevicePtr& device,
-	const CommandQueuePtr& cmdQueue,
+	const Device::Ptr& device,
+	const CommandQueue::Ptr& cmdQueue,
 	const GraphicsCommandContext::Ptr& uploadContext,
 	const char* const filePath)
 {
@@ -331,7 +331,7 @@ DemoFramework::D3D12::Model::Ptr DemoFramework::D3D12::Model::CreateFromObj(
 			};
 
 			// Create the staging vertex buffer.
-			ResourcePtr stagingVertexBuffer = CreateCommittedResource(
+			Resource::Ptr stagingVertexBuffer = CreateCommittedResource(
 				device,
 				vertexBufferDesc,
 				uploadHeapProps,
@@ -344,7 +344,7 @@ DemoFramework::D3D12::Model::Ptr DemoFramework::D3D12::Model::CreateFromObj(
 			}
 
 			// Create the staging index buffer;
-			ResourcePtr stagingIndexBuffer = CreateCommittedResource(
+			Resource::Ptr stagingIndexBuffer = CreateCommittedResource(
 				device,
 				indexBufferDesc,
 				uploadHeapProps,
@@ -488,7 +488,7 @@ DemoFramework::D3D12::Model::Ptr DemoFramework::D3D12::Model::CreateFromObj(
 //---------------------------------------------------------------------------------------------------------------------
 
 void DemoFramework::D3D12::Model::Render(
-	const GraphicsCommandListPtr& cmdList,
+	const GraphicsCommandList::Ptr& cmdList,
 	const uint32_t instanceCount,
 	const D3D12_PRIMITIVE_TOPOLOGY topology)
 {

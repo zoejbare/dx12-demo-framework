@@ -27,8 +27,8 @@
 //---------------------------------------------------------------------------------------------------------------------
 
 DemoFramework::D3D12::BackBuffer::Ptr DemoFramework::D3D12::BackBuffer::Create(
-	const DevicePtr& device,
-	const SwapChainPtr& swapChain,
+	const Device::Ptr& device,
+	const SwapChain::Ptr& swapChain,
 	const D3D12_DESCRIPTOR_HEAP_FLAGS flags,
 	const uint32_t nodeMask)
 {
@@ -70,7 +70,7 @@ DemoFramework::D3D12::BackBuffer::Ptr DemoFramework::D3D12::BackBuffer::Create(
 	// Create RTVs for each back buffer in the swap chain.
 	for(uint32_t bufferIndex = 0; bufferIndex < swapChainDesc.BufferCount; ++bufferIndex)
 	{
-		ResourcePtr& pBuffer = output->m_rtv[bufferIndex];
+		Resource::Ptr& pBuffer = output->m_rtv[bufferIndex];
 
 		// Get the back buffer resource for the current buffer index.
 		if(!SUCCEEDED(swapChain->GetBuffer(bufferIndex, IID_PPV_ARGS(&pBuffer))))

@@ -26,7 +26,7 @@
 
 //---------------------------------------------------------------------------------------------------------------------
 
-DemoFramework::D3D12::BlobPtr DemoFramework::D3D12::LoadShaderFromFile(const char* const filePath)
+DemoFramework::D3D12::Blob::Ptr DemoFramework::D3D12::LoadShaderFromFile(const char* const filePath)
 {
 	if(!filePath || filePath[0] == '\0')
 	{
@@ -58,7 +58,7 @@ DemoFramework::D3D12::BlobPtr DemoFramework::D3D12::LoadShaderFromFile(const cha
 	}
 
 	// Create the blob that will manage the lifetime of the shader data.
-	BlobPtr pOutput = CreateBlob(fileSize);
+	Blob::Ptr pOutput = CreateBlob(fileSize);
 	if(!pOutput)
 	{
 		fclose(pFile);

@@ -24,7 +24,7 @@
 //---------------------------------------------------------------------------------------------------------------------
 
 namespace DemoFramework { namespace D3D12 {
-	DF_API BlobPtr LoadShaderFromFile(const char* filePath);
+	DF_API Blob::Ptr LoadShaderFromFile(const char* filePath);
 }}
 
 //---------------------------------------------------------------------------------------------------------------------

@@ -30,7 +30,15 @@
 #define DF_SWAP_CHAIN_BUFFER_MAX_COUNT 3
 
 #define DF_DECL_WRL_COM_TYPE(ifaceName, typeName) \
-	class DF_API typeName : public Microsoft::WRL::ComPtr<ifaceName> { public: using Microsoft::WRL::ComPtr<ifaceName>::ComPtr; }
+	class DF_API typeName \
+	{ \
+		public: \
+			class DF_API Ptr : public Microsoft::WRL::ComPtr<ifaceName> \
+			{ \
+				public: \
+					using Microsoft::WRL::ComPtr<ifaceName>::ComPtr; \
+			}; \
+	}
 
 //---------------------------------------------------------------------------------------------------------------------
 
@@ -46,24 +54,24 @@ ID3DEvent
 //---------------------------------------------------------------------------------------------------------------------
 
 namespace DemoFramework { namespace D3D12 {
-	DF_DECL_WRL_COM_TYPE(ID3DBlob, BlobPtr);
-	DF_DECL_WRL_COM_TYPE(ID3DEvent, EventPtr);
+	DF_DECL_WRL_COM_TYPE(ID3DBlob, Blob);
+	DF_DECL_WRL_COM_TYPE(ID3DEvent, Event);
 
-	DF_DECL_WRL_COM_TYPE(ID3D12CommandQueue, CommandQueuePtr);
-	DF_DECL_WRL_COM_TYPE(ID3D12CommandAllocator, CommandAllocatorPtr);
+	DF_DECL_WRL_COM_TYPE(ID3D12CommandQueue, CommandQueue);
+	DF_DECL_WRL_COM_TYPE(ID3D12CommandAllocator, CommandAllocator);
 	DF_DECL_WRL_COM_TYPE(ID3D12Debug, DebugPtr);
-	DF_DECL_WRL_COM_TYPE(ID3D12DescriptorHeap, DescriptorHeapPtr);
-	DF_DECL_WRL_COM_TYPE(ID3D12Device2, DevicePtr);
-	DF_DECL_WRL_COM_TYPE(ID3D12InfoQueue, InfoQueuePtr);
-	DF_DECL_WRL_COM_TYPE(ID3D12Fence, FencePtr);
-	DF_DECL_WRL_COM_TYPE(ID3D12GraphicsCommandList, GraphicsCommandListPtr);
-	DF_DECL_WRL_COM_TYPE(ID3D12PipelineState, PipelineStatePtr);
-	DF_DECL_WRL_COM_TYPE(ID3D12Resource, ResourcePtr);
-	DF_DECL_WRL_COM_TYPE(ID3D12RootSignature, RootSignaturePtr);
+	DF_DECL_WRL_COM_TYPE(ID3D12DescriptorHeap, DescriptorHeap);
+	DF_DECL_WRL_COM_TYPE(ID3D12Device2, Device);
+	DF_DECL_WRL_COM_TYPE(ID3D12InfoQueue, InfoQueue);
+	DF_DECL_WRL_COM_TYPE(ID3D12Fence, Fence);
+	DF_DECL_WRL_COM_TYPE(ID3D12GraphicsCommandList, GraphicsCommandList);
+	DF_DECL_WRL_COM_TYPE(ID3D12PipelineState, PipelineState);
+	DF_DECL_WRL_COM_TYPE(ID3D12Resource, Resource);
+	DF_DECL_WRL_COM_TYPE(ID3D12RootSignature, RootSignature);
 
-	DF_DECL_WRL_COM_TYPE(IDXGIAdapter4, AdapterPtr);
-	DF_DECL_WRL_COM_TYPE(IDXGIFactory4, FactoryPtr);
-	DF_DECL_WRL_COM_TYPE(IDXGISwapChain4, SwapChainPtr);
+	DF_DECL_WRL_COM_TYPE(IDXGIAdapter4, Adapter);
+	DF_DECL_WRL_COM_TYPE(IDXGIFactory4, Factory);
+	DF_DECL_WRL_COM_TYPE(IDXGISwapChain4, SwapChain);
 }}
 
 //---------------------------------------------------------------------------------------------------------------------

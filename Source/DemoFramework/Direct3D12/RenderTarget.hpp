@@ -44,21 +44,21 @@ public:
 	RenderTarget& operator =(const RenderTarget&) = delete;
 	RenderTarget& operator =(RenderTarget&&) = delete;
 
-	static Ptr Create(const DevicePtr& device, uint32_t width, uint32_t height, DXGI_FORMAT format);
+	static Ptr Create(const Device::Ptr& device, uint32_t width, uint32_t height, DXGI_FORMAT format);
 
-	void TransitionTo(const GraphicsCommandListPtr& cmdList, D3D12_RESOURCE_STATES states);
+	void TransitionTo(const GraphicsCommandList::Ptr& cmdList, D3D12_RESOURCE_STATES states);
 
-	const ResourcePtr& GetResource() const;
-	const DescriptorHeapPtr& GetRtvHeap() const;
-	const DescriptorHeapPtr& GetSrvHeap() const;
+	const Resource::Ptr& GetResource() const;
+	const DescriptorHeap::Ptr& GetRtvHeap() const;
+	const DescriptorHeap::Ptr& GetSrvHeap() const;
 
 
 private:
 
-	ResourcePtr m_resource;
+	Resource::Ptr m_resource;
 
-	DescriptorHeapPtr m_rtvHeap;
-	DescriptorHeapPtr m_srvHeap;
+	DescriptorHeap::Ptr m_rtvHeap;
+	DescriptorHeap::Ptr m_srvHeap;
 
 	D3D12_CPU_DESCRIPTOR_HANDLE m_rtvHandle;
 	D3D12_CPU_DESCRIPTOR_HANDLE m_srvHandle;
@@ -87,21 +87,21 @@ inline DemoFramework::D3D12::RenderTarget::RenderTarget()
 
 //---------------------------------------------------------------------------------------------------------------------
 
-inline const DemoFramework::D3D12::ResourcePtr& DemoFramework::D3D12::RenderTarget::GetResource() const
+inline const DemoFramework::D3D12::Resource::Ptr& DemoFramework::D3D12::RenderTarget::GetResource() const
 {
 	return m_resource;
 }
 
 //---------------------------------------------------------------------------------------------------------------------
 
-inline const DemoFramework::D3D12::DescriptorHeapPtr& DemoFramework::D3D12::RenderTarget::GetRtvHeap() const
+inline const DemoFramework::D3D12::DescriptorHeap::Ptr& DemoFramework::D3D12::RenderTarget::GetRtvHeap() const
 {
 	return m_rtvHeap;
 }
 
 //---------------------------------------------------------------------------------------------------------------------
 
-inline const DemoFramework::D3D12::DescriptorHeapPtr& DemoFramework::D3D12::RenderTarget::GetSrvHeap() const
+inline const DemoFramework::D3D12::DescriptorHeap::Ptr& DemoFramework::D3D12::RenderTarget::GetSrvHeap() const
 {
 	return m_srvHeap;
 }

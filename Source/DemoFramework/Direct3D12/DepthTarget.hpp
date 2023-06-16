@@ -44,18 +44,18 @@ public:
 	DepthTarget& operator =(const DepthTarget&) = delete;
 	DepthTarget& operator =(DepthTarget&&) = delete;
 
-	static Ptr Create(const DevicePtr& device, uint32_t width, uint32_t height, DXGI_FORMAT format);
+	static Ptr Create(const Device::Ptr& device, uint32_t width, uint32_t height, DXGI_FORMAT format);
 
-	void TransitionTo(const GraphicsCommandListPtr& cmdList, D3D12_RESOURCE_STATES states);
+	void TransitionTo(const GraphicsCommandList::Ptr& cmdList, D3D12_RESOURCE_STATES states);
 
-	const ResourcePtr& GetResource() const;
-	const DescriptorHeapPtr& GetDsvHeap() const;
+	const Resource::Ptr& GetResource() const;
+	const DescriptorHeap::Ptr& GetDsvHeap() const;
 
 
 private:
 
-	ResourcePtr m_resource;
-	DescriptorHeapPtr m_heap;
+	Resource::Ptr m_resource;
+	DescriptorHeap::Ptr m_heap;
 
 	D3D12_CPU_DESCRIPTOR_HANDLE m_dsvHandle;
 
@@ -78,14 +78,14 @@ inline DemoFramework::D3D12::DepthTarget::DepthTarget()
 
 //---------------------------------------------------------------------------------------------------------------------
 
-inline const DemoFramework::D3D12::ResourcePtr& DemoFramework::D3D12::DepthTarget::GetResource() const
+inline const DemoFramework::D3D12::Resource::Ptr& DemoFramework::D3D12::DepthTarget::GetResource() const
 {
 	return m_resource;
 }
 
 //---------------------------------------------------------------------------------------------------------------------
 
-inline const DemoFramework::D3D12::DescriptorHeapPtr& DemoFramework::D3D12::DepthTarget::GetDsvHeap() const
+inline const DemoFramework::D3D12::DescriptorHeap::Ptr& DemoFramework::D3D12::DepthTarget::GetDsvHeap() const
 {
 	return m_heap;
 }

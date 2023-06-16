@@ -24,7 +24,7 @@
 //---------------------------------------------------------------------------------------------------------------------
 
 namespace DemoFramework { namespace D3D12 {
-	DF_API FencePtr CreateFence(const DevicePtr& device, D3D12_FENCE_FLAGS flags, uint64_t initialValue);
+	DF_API Fence::Ptr CreateFence(const Device::Ptr& device, D3D12_FENCE_FLAGS flags, uint64_t initialValue);
 }}
 
 //---------------------------------------------------------------------------------------------------------------------

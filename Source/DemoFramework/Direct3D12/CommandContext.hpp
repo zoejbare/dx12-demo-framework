@@ -44,19 +44,19 @@ public:
 	GraphicsCommandContext& operator =(const GraphicsCommandContext&) = delete;
 	GraphicsCommandContext& operator =(GraphicsCommandContext&&) = delete;
 
-	static Ptr Create(const DevicePtr& device, D3D12_COMMAND_LIST_TYPE type);
+	static Ptr Create(const Device::Ptr& device, D3D12_COMMAND_LIST_TYPE type);
 
 	void Reset();
-	void Submit(const CommandQueuePtr& cmdQueue);
+	void Submit(const CommandQueue::Ptr& cmdQueue);
 
-	const CommandAllocatorPtr& GetCmdAlloc() const;
-	const GraphicsCommandListPtr& GetCmdList() const;
+	const CommandAllocator::Ptr& GetCmdAlloc() const;
+	const GraphicsCommandList::Ptr& GetCmdList() const;
 
 
 private:
 
-	CommandAllocatorPtr m_cmdAlloc;
-	GraphicsCommandListPtr m_cmdList;
+	CommandAllocator::Ptr m_cmdAlloc;
+	GraphicsCommandList::Ptr m_cmdList;
 
 	bool m_initialized;
 };
@@ -76,14 +76,14 @@ inline DemoFramework::D3D12::GraphicsCommandContext::GraphicsCommandContext()
 
 //---------------------------------------------------------------------------------------------------------------------
 
-inline const DemoFramework::D3D12::CommandAllocatorPtr& DemoFramework::D3D12::GraphicsCommandContext::GetCmdAlloc() const
+inline const DemoFramework::D3D12::CommandAllocator::Ptr& DemoFramework::D3D12::GraphicsCommandContext::GetCmdAlloc() const
 {
 	return m_cmdAlloc;
 }
 
 //---------------------------------------------------------------------------------------------------------------------
 
-inline const DemoFramework::D3D12::GraphicsCommandListPtr& DemoFramework::D3D12::GraphicsCommandContext::GetCmdList() const
+inline const DemoFramework::D3D12::GraphicsCommandList::Ptr& DemoFramework::D3D12::GraphicsCommandContext::GetCmdList() const
 {
 	return m_cmdList;
 }

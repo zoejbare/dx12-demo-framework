@@ -24,7 +24,7 @@
 //---------------------------------------------------------------------------------------------------------------------
 
 namespace DemoFramework { namespace D3D12 {
-	DF_API CommandQueuePtr CreateCommandQueue(const DevicePtr& device, const D3D12_COMMAND_QUEUE_DESC& desc);
+	DF_API CommandQueue::Ptr CreateCommandQueue(const Device::Ptr& device, const D3D12_COMMAND_QUEUE_DESC& desc);
 }}
 
 //---------------------------------------------------------------------------------------------------------------------

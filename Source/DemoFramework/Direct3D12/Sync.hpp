@@ -44,16 +44,16 @@ public:
 	Sync& operator =(const Sync&) = delete;
 	Sync& operator =(Sync&&) = delete;
 
-	static Ptr Create(const DevicePtr& device, D3D12_FENCE_FLAGS flags);
+	static Ptr Create(const Device::Ptr& device, D3D12_FENCE_FLAGS flags);
 
-	void Signal(const CommandQueuePtr& cmdQueue);
+	void Signal(const CommandQueue::Ptr& cmdQueue);
 	void Wait(uint32_t timeout = INFINITE);
 
 
 private:
 
-	FencePtr m_fence;
-	EventPtr m_event;
+	Fence::Ptr m_fence;
+	Event::Ptr m_event;
 
 	uint64_t m_waitValue;
 	uint64_t m_nextValue;

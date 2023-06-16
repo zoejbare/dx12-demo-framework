@@ -24,7 +24,7 @@
 //---------------------------------------------------------------------------------------------------------------------
 
 namespace DemoFramework { namespace D3D12 {
-	DF_API DescriptorHeapPtr CreateDescriptorHeap(const DevicePtr& device, const D3D12_DESCRIPTOR_HEAP_DESC& desc);
+	DF_API DescriptorHeap::Ptr CreateDescriptorHeap(const Device::Ptr& device, const D3D12_DESCRIPTOR_HEAP_DESC& desc);
 }}
 
 //---------------------------------------------------------------------------------------------------------------------

@@ -22,7 +22,7 @@
 
 //---------------------------------------------------------------------------------------------------------------------
 
-DemoFramework::D3D12::DevicePtr DemoFramework::D3D12::CreateDevice(const AdapterPtr& adapter)
+DemoFramework::D3D12::Device::Ptr DemoFramework::D3D12::CreateDevice(const Adapter::Ptr& adapter)
 {
 	if(!adapter)
 	{
@@ -30,8 +30,8 @@ DemoFramework::D3D12::DevicePtr DemoFramework::D3D12::CreateDevice(const Adapter
 		return nullptr;
 	}
 
-	DevicePtr output;
-	InfoQueuePtr infoQueue;
+	Device::Ptr output;
+	InfoQueue::Ptr infoQueue;
 
 	// Create the device using the input display adapter.
 	const HRESULT createDeviceResult = D3D12CreateDevice(adapter.Get(), D3D_FEATURE_LEVEL_12_0, IID_PPV_ARGS(&output));

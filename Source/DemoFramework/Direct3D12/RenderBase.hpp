@@ -52,8 +52,7 @@ public:
 		uint32_t backBufferHeight,
 		uint32_t backBufferCount,
 		DXGI_FORMAT backBufferFormat,
-		DXGI_FORMAT depthFormat
-	);
+		DXGI_FORMAT depthFormat);
 
 	void BeginFrame();
 	void EndFrame(bool vsync);
@@ -61,9 +60,9 @@ public:
 	bool ResizeSwapChain();
 	void SetBackBufferAsRenderTarget();
 
-	const DevicePtr& GetDevice() const;
-	const CommandQueuePtr& GetCmdQueue() const;
-	const SwapChainPtr& GetSwapChain() const;
+	const Device::Ptr& GetDevice() const;
+	const CommandQueue::Ptr& GetCmdQueue() const;
+	const SwapChain::Ptr& GetSwapChain() const;
 
 	const GraphicsCommandContext::Ptr& GetUploadContext() const;
 	const GraphicsCommandContext::Ptr& GetDrawContext() const;
@@ -78,14 +77,14 @@ private:
 
 	void prv_waitForFrame(uint32_t);
 
-	DevicePtr m_device;
-	CommandQueuePtr m_cmdQueue;
-	SwapChainPtr m_swapChain;
-	DescriptorHeapPtr m_depthDescHeap;
-	ResourcePtr m_depthBuffer;
+	Device::Ptr m_device;
+	CommandQueue::Ptr m_cmdQueue;
+	SwapChain::Ptr m_swapChain;
+	DescriptorHeap::Ptr m_depthDescHeap;
+	Resource::Ptr m_depthBuffer;
 
-	FencePtr m_drawFence;
-	EventPtr m_drawEvent;
+	Fence::Ptr m_drawFence;
+	Event::Ptr m_drawEvent;
 
 	GraphicsCommandContext::Ptr m_uploadContext;
 	GraphicsCommandContext::Ptr m_drawContext[DF_SWAP_CHAIN_BUFFER_MAX_COUNT];
@@ -149,14 +148,14 @@ inline DemoFramework::D3D12::RenderBase::~RenderBase()
 
 //---------------------------------------------------------------------------------------------------------------------
 
-inline const DemoFramework::D3D12::DevicePtr& DemoFramework::D3D12::RenderBase::GetDevice() const
+inline const DemoFramework::D3D12::Device::Ptr& DemoFramework::D3D12::RenderBase::GetDevice() const
 {
 	return m_device;
 }
 
 //---------------------------------------------------------------------------------------------------------------------
 
-inline const DemoFramework::D3D12::CommandQueuePtr& DemoFramework::D3D12::RenderBase::GetCmdQueue() const
+inline const DemoFramework::D3D12::CommandQueue::Ptr& DemoFramework::D3D12::RenderBase::GetCmdQueue() const
 {
 	return m_cmdQueue;
 }
@@ -177,7 +176,7 @@ inline const DemoFramework::D3D12::GraphicsCommandContext::Ptr& DemoFramework::D
 
 //---------------------------------------------------------------------------------------------------------------------
 
-inline const DemoFramework::D3D12::SwapChainPtr& DemoFramework::D3D12::RenderBase::GetSwapChain() const
+inline const DemoFramework::D3D12::SwapChain::Ptr& DemoFramework::D3D12::RenderBase::GetSwapChain() const
 {
 	return m_swapChain;
 }

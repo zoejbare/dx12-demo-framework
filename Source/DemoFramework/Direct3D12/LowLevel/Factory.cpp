@@ -22,7 +22,7 @@
 
 //---------------------------------------------------------------------------------------------------------------------
 
-DemoFramework::D3D12::FactoryPtr DemoFramework::D3D12::CreateFactory()
+DemoFramework::D3D12::Factory::Ptr DemoFramework::D3D12::CreateFactory()
 {
 	typedef Microsoft::WRL::ComPtr<IDXGIFactory4> StagingFactoryPtr;
 
@@ -41,7 +41,7 @@ DemoFramework::D3D12::FactoryPtr DemoFramework::D3D12::CreateFactory()
 	}
 #endif
 
-	D3D12::FactoryPtr output;
+	D3D12::Factory::Ptr output;
 
 	const HRESULT result = CreateDXGIFactory2(flags, IID_PPV_ARGS(&output));
 	if(result != S_OK)

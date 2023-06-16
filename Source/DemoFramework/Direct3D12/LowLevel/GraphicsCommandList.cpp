@@ -22,9 +22,9 @@
 
 //---------------------------------------------------------------------------------------------------------------------
 
-DemoFramework::D3D12::GraphicsCommandListPtr DemoFramework::D3D12::CreateGraphicsCommandList(
-	const DevicePtr& device,
-	const CommandAllocatorPtr& cmdAlloc,
+DemoFramework::D3D12::GraphicsCommandList::Ptr DemoFramework::D3D12::CreateGraphicsCommandList(
+	const Device::Ptr& device,
+	const CommandAllocator::Ptr& cmdAlloc,
 	const D3D12_COMMAND_LIST_TYPE type,
 	const uint32_t nodeMask)
 {
@@ -34,7 +34,7 @@ DemoFramework::D3D12::GraphicsCommandListPtr DemoFramework::D3D12::CreateGraphic
 		return nullptr;
 	}
 
-	D3D12::GraphicsCommandListPtr output;
+	D3D12::GraphicsCommandList::Ptr output;
 
 	const HRESULT result = device->CreateCommandList(nodeMask, type, cmdAlloc.Get(), nullptr, IID_PPV_ARGS(&output));
 	if(result != S_OK)

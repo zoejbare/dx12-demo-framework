@@ -71,18 +71,18 @@ private:
 	DemoFramework::D3D12::RenderBase::Ptr m_renderBase;
 	DemoFramework::D3D12::Gui::Ptr m_gui;
 
-	DemoFramework::D3D12::RootSignaturePtr m_rootSignature;
-	DemoFramework::D3D12::PipelineStatePtr m_gfxPipeline;
-	DemoFramework::D3D12::DescriptorHeapPtr m_vertexShaderDescHeap;
+	DemoFramework::D3D12::RootSignature::Ptr m_rootSignature;
+	DemoFramework::D3D12::PipelineState::Ptr m_gfxPipeline;
+	DemoFramework::D3D12::DescriptorHeap::Ptr m_vertexShaderDescHeap;
 
-	DemoFramework::D3D12::ResourcePtr m_quadVertexBuffer;
-	DemoFramework::D3D12::ResourcePtr m_quadIndexBuffer;
+	DemoFramework::D3D12::Resource::Ptr m_quadVertexBuffer;
+	DemoFramework::D3D12::Resource::Ptr m_quadIndexBuffer;
 
-	DemoFramework::D3D12::ResourcePtr m_constBuffer;
-	DemoFramework::D3D12::ResourcePtr m_stagingConstBuffer[DF_SWAP_CHAIN_BUFFER_MAX_COUNT];
+	DemoFramework::D3D12::Resource::Ptr m_constBuffer;
+	DemoFramework::D3D12::Resource::Ptr m_stagingConstBuffer[DF_SWAP_CHAIN_BUFFER_MAX_COUNT];
 
-	DemoFramework::D3D12::BlobPtr m_vertexShader;
-	DemoFramework::D3D12::BlobPtr m_pixelShader;
+	DemoFramework::D3D12::Blob::Ptr m_vertexShader;
+	DemoFramework::D3D12::Blob::Ptr m_pixelShader;
 
 	DemoFramework::FrameTimer m_frameTimer;
 

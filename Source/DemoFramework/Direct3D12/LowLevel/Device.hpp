@@ -24,7 +24,7 @@
 //---------------------------------------------------------------------------------------------------------------------
 
 namespace DemoFramework { namespace D3D12 {
-	DF_API DevicePtr CreateDevice(const AdapterPtr& adapter);
+	DF_API Device::Ptr CreateDevice(const Adapter::Ptr& adapter);
 }}
 
 //---------------------------------------------------------------------------------------------------------------------

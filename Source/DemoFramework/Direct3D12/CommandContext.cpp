@@ -26,7 +26,7 @@
 //---------------------------------------------------------------------------------------------------------------------
 
 DemoFramework::D3D12::GraphicsCommandContext::Ptr DemoFramework::D3D12::GraphicsCommandContext::Create(
-	const DevicePtr& device,
+	const Device::Ptr& device,
 	const D3D12_COMMAND_LIST_TYPE type)
 {
 	if(!device)
@@ -72,7 +72,7 @@ void DemoFramework::D3D12::GraphicsCommandContext::Reset()
 
 //---------------------------------------------------------------------------------------------------------------------
 
-void DemoFramework::D3D12::GraphicsCommandContext::Submit(const CommandQueuePtr& cmdQueue)
+void DemoFramework::D3D12::GraphicsCommandContext::Submit(const CommandQueue::Ptr& cmdQueue)
 {
 	if(m_initialized && cmdQueue)
 	{

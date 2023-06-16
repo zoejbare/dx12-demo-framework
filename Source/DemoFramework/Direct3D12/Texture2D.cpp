@@ -32,8 +32,8 @@
 //---------------------------------------------------------------------------------------------------------------------
 
 DemoFramework::D3D12::Texture2D::Ptr DemoFramework::D3D12::Texture2D::Load(
-	const DevicePtr& device,
-	const CommandQueuePtr& cmdQueue,
+	const Device::Ptr& device,
+	const CommandQueue::Ptr& cmdQueue,
 	const GraphicsCommandContext::Ptr& uploadCmdCtx,
 	const DataType dataType,
 	const Channel channel,
@@ -277,7 +277,7 @@ DemoFramework::D3D12::Texture2D::Ptr DemoFramework::D3D12::Texture2D::Load(
 	};
 
 	// Create the staging texture resource.
-	ResourcePtr stagingTexture = CreateCommittedResource(
+	Resource::Ptr stagingTexture = CreateCommittedResource(
 		device,
 		stagingResDesc,
 		uploadHeapProps,
@@ -289,7 +289,7 @@ DemoFramework::D3D12::Texture2D::Ptr DemoFramework::D3D12::Texture2D::Load(
 	}
 
 	// Create the GPU-resident texture resource.
-	ResourcePtr gpuTexture = CreateCommittedResource(
+	Resource::Ptr gpuTexture = CreateCommittedResource(
 		device,
 		gpuResDesc,
 		gpuHeapProps,
@@ -301,7 +301,7 @@ DemoFramework::D3D12::Texture2D::Ptr DemoFramework::D3D12::Texture2D::Load(
 	}
 
 	// Create the texture's descriptor heap.
-	DescriptorHeapPtr heap = CreateDescriptorHeap(device, heapDesc);
+	DescriptorHeap::Ptr heap = CreateDescriptorHeap(device, heapDesc);
 	if(!heap)
 	{
 		return Ptr();
@@ -413,8 +413,6 @@ DemoFramework::D3D12::Texture2D::Ptr DemoFramework::D3D12::Texture2D::Load(
 
 	output->m_resource = gpuTexture;
 	output->m_heap = heap;
-	output->m_cpuHandle = heap->GetCPUDescriptorHandleForHeapStart();
-	output->m_gpuHandle = heap->GetGPUDescriptorHandleForHeapStart();
 	output->m_initialized = true;
 
 	D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc;
@@ -427,7 +425,7 @@ DemoFramework::D3D12::Texture2D::Ptr DemoFramework::D3D12::Texture2D::Load(
 	srvDesc.Texture2D.ResourceMinLODClamp = 0.0f;
 
 	// Create the SRV from the resource.
-	pDevice->CreateShaderResourceView(gpuTexture.Get(), &srvDesc, output->m_cpuHandle);
+	pDevice->CreateShaderResourceView(gpuTexture.Get(), &srvDesc, heap->GetCPUDescriptorHandleForHeapStart());
 
 	return output;
 }

@@ -45,21 +45,21 @@ public:
 	BackBuffer& operator =(BackBuffer&&) = delete;
 
 	static Ptr Create(
-		const DevicePtr& device,
-		const SwapChainPtr& swapChain,
+		const Device::Ptr& device,
+		const SwapChain::Ptr& swapChain,
 		D3D12_DESCRIPTOR_HEAP_FLAGS flags,
 		uint32_t nodeMask
 	);
 
-	const ResourcePtr& GetRtv(size_t bufferIndex) const;
+	const Resource::Ptr& GetRtv(size_t bufferIndex) const;
 
 	D3D12_CPU_DESCRIPTOR_HANDLE GetCpuDescHandle(size_t bufferIndex) const;
 
 
 private:
 
-	ResourcePtr m_rtv[DF_SWAP_CHAIN_BUFFER_MAX_COUNT];
-	DescriptorHeapPtr m_descHeap;
+	Resource::Ptr m_rtv[DF_SWAP_CHAIN_BUFFER_MAX_COUNT];
+	DescriptorHeap::Ptr m_descHeap;
 
 	D3D12_CPU_DESCRIPTOR_HANDLE m_cpuHandle;
 
@@ -87,7 +87,7 @@ inline DemoFramework::D3D12::BackBuffer::BackBuffer()
 
 //---------------------------------------------------------------------------------------------------------------------
 
-inline const DemoFramework::D3D12::ResourcePtr& DemoFramework::D3D12::BackBuffer::GetRtv(const size_t bufferIndex) const
+inline const DemoFramework::D3D12::Resource::Ptr& DemoFramework::D3D12::BackBuffer::GetRtv(const size_t bufferIndex) const
 {
 	assert(bufferIndex < m_bufferCount);
 

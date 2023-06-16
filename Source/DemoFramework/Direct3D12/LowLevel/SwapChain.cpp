@@ -22,9 +22,9 @@
 
 //---------------------------------------------------------------------------------------------------------------------
 
-DemoFramework::D3D12::SwapChainPtr DemoFramework::D3D12::CreateSwapChain(
-	const FactoryPtr& factory,
-	const CommandQueuePtr& cmdQueue,
+DemoFramework::D3D12::SwapChain::Ptr DemoFramework::D3D12::CreateSwapChain(
+	const Factory::Ptr& factory,
+	const CommandQueue::Ptr& cmdQueue,
 	const DXGI_SWAP_CHAIN_DESC1& desc,
 	HWND hWnd)
 {
@@ -43,7 +43,7 @@ DemoFramework::D3D12::SwapChainPtr DemoFramework::D3D12::CreateSwapChain(
 	}
 
 	StagingSwapChainPtr staging;
-	D3D12::SwapChainPtr output;
+	D3D12::SwapChain::Ptr output;
 
 	const HRESULT createResult = factory->CreateSwapChainForHwnd(cmdQueue.Get(), hWnd, &desc, nullptr, nullptr, &staging);
 	if(createResult != S_OK)

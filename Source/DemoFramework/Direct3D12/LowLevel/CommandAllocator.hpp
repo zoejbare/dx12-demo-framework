@@ -24,7 +24,7 @@
 //---------------------------------------------------------------------------------------------------------------------
 
 namespace DemoFramework { namespace D3D12 {
-	DF_API CommandAllocatorPtr CreateCommandAllocator(const DevicePtr& device, D3D12_COMMAND_LIST_TYPE type);
+	DF_API CommandAllocator::Ptr CreateCommandAllocator(const Device::Ptr& device, D3D12_COMMAND_LIST_TYPE type);
 }}
 
 //---------------------------------------------------------------------------------------------------------------------

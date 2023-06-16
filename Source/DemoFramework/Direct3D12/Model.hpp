@@ -66,8 +66,8 @@ public:
 		Mesh();
 		~Mesh();
 
-		ResourcePtr vertexBuffer;
-		ResourcePtr indexBuffer;
+		Resource::Ptr vertexBuffer;
+		Resource::Ptr indexBuffer;
 
 		Vertex* pVertices;
 		void* pIndices;
@@ -92,12 +92,12 @@ public:
 	static D3D12_INPUT_LAYOUT_DESC GetInputLayout();
 
 	static Ptr CreateFromObj(
-		const DevicePtr& device,
-		const CommandQueuePtr& cmdQueue,
+		const Device::Ptr& device,
+		const CommandQueue::Ptr& cmdQueue,
 		const GraphicsCommandContext::Ptr& uploadContext,
 		const char* filePath);
 
-	void Render(const GraphicsCommandListPtr& cmdList, uint32_t instanceCount, D3D12_PRIMITIVE_TOPOLOGY topology);
+	void Render(const GraphicsCommandList::Ptr& cmdList, uint32_t instanceCount, D3D12_PRIMITIVE_TOPOLOGY topology);
 
 
 private:

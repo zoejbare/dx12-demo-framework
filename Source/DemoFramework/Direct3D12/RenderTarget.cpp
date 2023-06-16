@@ -26,7 +26,7 @@
 //---------------------------------------------------------------------------------------------------------------------
 
 DemoFramework::D3D12::RenderTarget::Ptr DemoFramework::D3D12::RenderTarget::Create(
-	const DevicePtr& device,
+	const Device::Ptr& device,
 	const uint32_t width,
 	const uint32_t height,
 	const DXGI_FORMAT format)
@@ -160,7 +160,7 @@ DemoFramework::D3D12::RenderTarget::Ptr DemoFramework::D3D12::RenderTarget::Crea
 
 //---------------------------------------------------------------------------------------------------------------------
 
-void DemoFramework::D3D12::RenderTarget::TransitionTo(const GraphicsCommandListPtr& cmdList, const D3D12_RESOURCE_STATES states)
+void DemoFramework::D3D12::RenderTarget::TransitionTo(const GraphicsCommandList::Ptr& cmdList, const D3D12_RESOURCE_STATES states)
 {
 	if(m_initialized && states != m_currentStates)
 	{

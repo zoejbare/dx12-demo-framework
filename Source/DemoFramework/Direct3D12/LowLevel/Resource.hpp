@@ -24,8 +24,8 @@
 //---------------------------------------------------------------------------------------------------------------------
 
 namespace DemoFramework { namespace D3D12 {
-	DF_API ResourcePtr CreateCommittedResource(
-		const DevicePtr& device,
+	DF_API Resource::Ptr CreateCommittedResource(
+		const Device::Ptr& device,
 		const D3D12_RESOURCE_DESC& desc,
 		const D3D12_HEAP_PROPERTIES& heapProps,
 		D3D12_HEAP_FLAGS heapFlags,

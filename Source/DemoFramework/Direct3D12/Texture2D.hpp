@@ -58,8 +58,8 @@ public:
 	Texture2D& operator =(Texture2D&&) = delete;
 
 	static Ptr Load(
-		const DevicePtr& device,
-		const CommandQueuePtr& cmdQueue,
+		const Device::Ptr& device,
+		const CommandQueue::Ptr& cmdQueue,
 		const GraphicsCommandContext::Ptr& uploadCmdCtx,
 		DataType dataType,
 		Channel channel,
@@ -67,17 +67,13 @@ public:
 		uint32_t mipCount = D3D12_REQ_MIP_LEVELS
 	);
 
-	const DescriptorHeapPtr& GetHeap() const;
-	D3D12_GPU_DESCRIPTOR_HANDLE GetGpuHandle() const;
+	const DescriptorHeap::Ptr& GetHeap() const;
 
 
 private:
 
-	ResourcePtr m_resource;
-	DescriptorHeapPtr m_heap;
-
-	D3D12_CPU_DESCRIPTOR_HANDLE m_cpuHandle;
-	D3D12_GPU_DESCRIPTOR_HANDLE m_gpuHandle;
+	Resource::Ptr m_resource;
+	DescriptorHeap::Ptr m_heap;
 
 	bool m_initialized;
 };
@@ -91,24 +87,15 @@ template class DF_API std::shared_ptr<DemoFramework::D3D12::Texture2D>;
 inline DemoFramework::D3D12::Texture2D::Texture2D()
 	: m_resource()
 	, m_heap()
-	, m_cpuHandle({0})
-	, m_gpuHandle({0})
 	, m_initialized(false)
 {
 }
 
 //---------------------------------------------------------------------------------------------------------------------
 
-inline const DemoFramework::D3D12::DescriptorHeapPtr& DemoFramework::D3D12::Texture2D::GetHeap() const
+inline const DemoFramework::D3D12::DescriptorHeap::Ptr& DemoFramework::D3D12::Texture2D::GetHeap() const
 {
 	return m_heap;
-}
-
-//---------------------------------------------------------------------------------------------------------------------
-
-inline D3D12_GPU_DESCRIPTOR_HANDLE DemoFramework::D3D12::Texture2D::GetGpuHandle() const
-{
-	return m_gpuHandle;
 }
 
 //---------------------------------------------------------------------------------------------------------------------

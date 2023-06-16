@@ -22,7 +22,7 @@
 
 //---------------------------------------------------------------------------------------------------------------------
 
-DemoFramework::D3D12::CommandQueuePtr DemoFramework::D3D12::CreateCommandQueue(const DevicePtr& device, const D3D12_COMMAND_QUEUE_DESC& desc)
+DemoFramework::D3D12::CommandQueue::Ptr DemoFramework::D3D12::CreateCommandQueue(const Device::Ptr& device, const D3D12_COMMAND_QUEUE_DESC& desc)
 {
 	if(!device)
 	{
@@ -30,7 +30,7 @@ DemoFramework::D3D12::CommandQueuePtr DemoFramework::D3D12::CreateCommandQueue(c
 		return nullptr;
 	}
 
-	D3D12::CommandQueuePtr output;
+	D3D12::CommandQueue::Ptr output;
 
 	const HRESULT result = device->CreateCommandQueue(&desc, IID_PPV_ARGS(&output));
 	if(result != S_OK)

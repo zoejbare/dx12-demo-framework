@@ -22,8 +22,8 @@
 
 //---------------------------------------------------------------------------------------------------------------------
 
-DemoFramework::D3D12::ResourcePtr DemoFramework::D3D12::CreateCommittedResource(
-	const DevicePtr& device,
+DemoFramework::D3D12::Resource::Ptr DemoFramework::D3D12::CreateCommittedResource(
+	const Device::Ptr& device,
 	const D3D12_RESOURCE_DESC& desc,
 	const D3D12_HEAP_PROPERTIES& heapProps,
 	const D3D12_HEAP_FLAGS heapFlags,
@@ -36,7 +36,7 @@ DemoFramework::D3D12::ResourcePtr DemoFramework::D3D12::CreateCommittedResource(
 		return nullptr;
 	}
 
-	D3D12::ResourcePtr output;
+	D3D12::Resource::Ptr output;
 
 	const HRESULT result = device->CreateCommittedResource(&heapProps, heapFlags, &desc, states, pOptimizedClearValue, IID_PPV_ARGS(&output));
 	if(result != S_OK)

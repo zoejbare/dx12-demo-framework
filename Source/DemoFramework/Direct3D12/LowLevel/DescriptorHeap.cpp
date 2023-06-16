@@ -22,7 +22,9 @@
 
 //---------------------------------------------------------------------------------------------------------------------
 
-DemoFramework::D3D12::DescriptorHeapPtr DemoFramework::D3D12::CreateDescriptorHeap(const DevicePtr& device, const D3D12_DESCRIPTOR_HEAP_DESC& desc)
+DemoFramework::D3D12::DescriptorHeap::Ptr DemoFramework::D3D12::CreateDescriptorHeap(
+	const Device::Ptr& device,
+	const D3D12_DESCRIPTOR_HEAP_DESC& desc)
 {
 	if(!device)
 	{
@@ -30,7 +32,7 @@ DemoFramework::D3D12::DescriptorHeapPtr DemoFramework::D3D12::CreateDescriptorHe
 		return nullptr;
 	}
 
-	D3D12::DescriptorHeapPtr output;
+	D3D12::DescriptorHeap::Ptr output;
 
 	const HRESULT result = device->CreateDescriptorHeap(&desc, IID_PPV_ARGS(&output));
 	if(result != S_OK)

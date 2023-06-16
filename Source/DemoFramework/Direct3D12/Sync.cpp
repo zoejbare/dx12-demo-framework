@@ -25,7 +25,7 @@
 
 //---------------------------------------------------------------------------------------------------------------------
 
-DemoFramework::D3D12::Sync::Ptr DemoFramework::D3D12::Sync::Create(const DevicePtr& device, const D3D12_FENCE_FLAGS flags)
+DemoFramework::D3D12::Sync::Ptr DemoFramework::D3D12::Sync::Create(const Device::Ptr& device, const D3D12_FENCE_FLAGS flags)
 {
 	if(!device)
 	{
@@ -59,7 +59,7 @@ DemoFramework::D3D12::Sync::Ptr DemoFramework::D3D12::Sync::Create(const DeviceP
 
 //---------------------------------------------------------------------------------------------------------------------
 
-void DemoFramework::D3D12::Sync::Signal(const CommandQueuePtr& pCmdQueue)
+void DemoFramework::D3D12::Sync::Signal(const CommandQueue::Ptr& pCmdQueue)
 {
 	if(m_initialized)
 	{

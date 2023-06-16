@@ -476,7 +476,7 @@ bool SampleApp::prv_createGfxPipeline()
 
 	LOG_WRITE("Creating graphics pipeline resources ...");
 
-	const D3D12::DevicePtr& pDevice = m_renderBase->GetDevice().Get();
+	const D3D12::Device::Ptr& pDevice = m_renderBase->GetDevice();
 
 	const D3D12_DESCRIPTOR_RANGE descRange =
 	{
@@ -652,8 +652,7 @@ bool SampleApp::prv_createQuadGeometry()
 {
 	using namespace DemoFramework;
 
-	const D3D12::DevicePtr& pDevice = m_renderBase->GetDevice();
-
+	const D3D12::Device::Ptr& pDevice = m_renderBase->GetDevice();
 
 	// Construct the geometry for a quad
 	const Vertex triangleVertices[] =
@@ -694,7 +693,7 @@ bool SampleApp::prv_createQuadGeometry()
 	}
 
 	// Create the staging vertex buffer.
-	D3D12::ResourcePtr stagingVertexBuffer = D3D12::CreateCommittedResource(
+	D3D12::Resource::Ptr stagingVertexBuffer = D3D12::CreateCommittedResource(
 		pDevice,
 		vertexBufferDesc,
 		uploadHeapProps,
@@ -746,7 +745,7 @@ bool SampleApp::prv_createQuadGeometry()
 	}
 
 	// Create the staging index buffer.
-	D3D12::ResourcePtr stagingIndexBuffer = D3D12::CreateCommittedResource(
+	D3D12::Resource::Ptr stagingIndexBuffer = D3D12::CreateCommittedResource(
 		pDevice,
 		indexBufferDesc,
 		uploadHeapProps,
@@ -830,7 +829,7 @@ bool SampleApp::prv_createConstBuffer()
 
 	LOG_WRITE("Creating constant buffer resources ...");
 
-	const D3D12::DevicePtr& pDevice = m_renderBase->GetDevice();
+	const D3D12::Device::Ptr& pDevice = m_renderBase->GetDevice();
 
 	// Constant buffers are required to have a size that is 256-byte aligned.
 	const D3D12_RESOURCE_DESC constBufferDesc =

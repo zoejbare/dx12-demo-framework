@@ -22,8 +22,8 @@
 
 //---------------------------------------------------------------------------------------------------------------------
 
-DemoFramework::D3D12::PipelineStatePtr DemoFramework::D3D12::CreatePipelineState(
-	const DevicePtr& device,
+DemoFramework::D3D12::PipelineState::Ptr DemoFramework::D3D12::CreatePipelineState(
+	const Device::Ptr& device,
 	const D3D12_GRAPHICS_PIPELINE_STATE_DESC& desc)
 {
 	if(!device)
@@ -32,7 +32,7 @@ DemoFramework::D3D12::PipelineStatePtr DemoFramework::D3D12::CreatePipelineState
 		return nullptr;
 	}
 
-	D3D12::PipelineStatePtr output;
+	D3D12::PipelineState::Ptr output;
 
 	const HRESULT result = device->CreateGraphicsPipelineState(&desc, IID_PPV_ARGS(&output));
 	if(result != S_OK)

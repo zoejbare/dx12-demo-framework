@@ -24,9 +24,9 @@
 
 //---------------------------------------------------------------------------------------------------------------------
 
-DemoFramework::D3D12::BlobPtr DemoFramework::D3D12::CreateBlob(const size_t size)
+DemoFramework::D3D12::Blob::Ptr DemoFramework::D3D12::CreateBlob(const size_t size)
 {
-	BlobPtr output;
+	Blob::Ptr output;
 
 	const HRESULT result = D3DCreateBlob(size, &output);
 	if(result != S_OK)
