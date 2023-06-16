@@ -22,68 +22,81 @@
 
 //---------------------------------------------------------------------------------------------------------------------
 
-DemoFramework::D3D12::RootSignaturePtr DemoFramework::D3D12::CreateRootSignature(const DevicePtr& pDevice, const D3D12_ROOT_SIGNATURE_DESC& desc)
+DemoFramework::D3D12::RootSignaturePtr DemoFramework::D3D12::CreateRootSignature(const DevicePtr& device, const D3D12_ROOT_SIGNATURE_DESC& desc)
 {
-	if(!pDevice)
+	if(!device)
 	{
 		LOG_ERROR("Invalid parameter");
 		return nullptr;
 	}
 
-	D3D12::BlobPtr pSignature;
-	D3D12::BlobPtr pError;
+	D3D12_VERSIONED_ROOT_SIGNATURE_DESC versionDesc;
+	versionDesc.Version = D3D_ROOT_SIGNATURE_VERSION_1_0;
+	versionDesc.Desc_1_0 = desc;
 
-	const HRESULT serializeResult = D3D12SerializeRootSignature(&desc, D3D_ROOT_SIGNATURE_VERSION_1_0, &pSignature, &pError);
-	if(serializeResult != S_OK)
-	{
-		LOG_ERROR("Failed to serialize root signature; result='0x%08" PRIX32 "'", serializeResult);
-		return nullptr;
-	}
-
-	D3D12::RootSignaturePtr pOutput;
-
-	const HRESULT createResult = pDevice->CreateRootSignature(0, pSignature->GetBufferPointer(), pSignature->GetBufferSize(), IID_PPV_ARGS(&pOutput));
-	if(createResult != S_OK)
-	{
-		LOG_ERROR("Failed to create root signature; result='0x%08" PRIX32 "'", createResult);
-		return nullptr;
-	}
-
-	return pOutput;
+	return CreateVersionedRootSignature(device, versionDesc);
 }
 
 //---------------------------------------------------------------------------------------------------------------------
 
 DemoFramework::D3D12::RootSignaturePtr DemoFramework::D3D12::CreateVersionedRootSignature(
-	const DevicePtr& pDevice,
+	const DevicePtr& device,
 	const D3D12_VERSIONED_ROOT_SIGNATURE_DESC& desc)
 {
-	if(!pDevice)
+	if(!device)
 	{
 		LOG_ERROR("Invalid parameter");
 		return nullptr;
 	}
 
-	D3D12::BlobPtr pSignature;
-	D3D12::BlobPtr pError;
+	D3D12::BlobPtr signature;
+	D3D12::BlobPtr error;
 
-	const HRESULT serializeResult = D3D12SerializeVersionedRootSignature(&desc, &pSignature, &pError);
+	const HRESULT serializeResult = D3D12SerializeVersionedRootSignature(&desc, &signature, &error);
 	if(serializeResult != S_OK)
 	{
-		LOG_ERROR("Failed to serialize root signature; result='0x%08" PRIX32 "'", serializeResult);
+		char* const errorMsg = reinterpret_cast<char*>(error->GetBufferPointer());
+		assert(errorMsg != nullptr);
+
+		// Trim all whitespace from the end of the error message.
+		for(;;)
+		{
+			const size_t length = strlen(errorMsg);
+
+			if(length == 0)
+			{
+				// The message string is empty.
+				break;
+			}
+
+			const size_t endIndex = length - 1;
+
+			if(isspace(errorMsg[endIndex]))
+			{
+				// Replace the character at the end of the string with a null terminator.
+				errorMsg[endIndex] = '\0';
+			}
+			else
+			{
+				// The last character is valid, so we can stop trimming now.
+				break;
+			}
+		}
+
+		LOG_ERROR("Failed to serialize root signature; result='0x%08" PRIX32 "'\n\tMsg: %s", serializeResult, errorMsg);
 		return nullptr;
 	}
 
-	D3D12::RootSignaturePtr pOutput;
+	D3D12::RootSignaturePtr output;
 
-	const HRESULT createResult = pDevice->CreateRootSignature(0, pSignature->GetBufferPointer(), pSignature->GetBufferSize(), IID_PPV_ARGS(&pOutput));
+	const HRESULT createResult = device->CreateRootSignature(0, signature->GetBufferPointer(), signature->GetBufferSize(), IID_PPV_ARGS(&output));
 	if(createResult != S_OK)
 	{
 		LOG_ERROR("Failed to create root signature; result='0x%08" PRIX32 "'", createResult);
 		return nullptr;
 	}
 
-	return pOutput;
+	return output;
 }
 
 //---------------------------------------------------------------------------------------------------------------------
