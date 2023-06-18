@@ -18,7 +18,6 @@
 
 #include "Texture2D.hpp"
 
-#include "RenderTarget.hpp"
 #include "Sync.hpp"
 
 #include "LowLevel/DescriptorHeap.hpp"
@@ -163,7 +162,15 @@ DemoFramework::D3D12::Texture2D::Ptr DemoFramework::D3D12::Texture2D::Load(
 	baseImage.pixels = reinterpret_cast<uint8_t*>(pImgData);
 
 	DirectX::ScratchImage mipChain;
-	DirectX::GenerateMipMaps(baseImage, DirectX::TEX_FILTER_BOX, size_t(mipLevelCount), mipChain);
+
+	if(mipLevelCount > 1)
+	{
+		DirectX::GenerateMipMaps(baseImage, DirectX::TEX_FILTER_BOX, size_t(mipLevelCount), mipChain);
+	}
+	else
+	{
+		mipChain.InitializeFromImage(baseImage);
+	}
 
 	// Free the original image data now that we no longer need it.
 	stbi_image_free(pImgData);
@@ -247,7 +254,7 @@ DemoFramework::D3D12::Texture2D::Ptr DemoFramework::D3D12::Texture2D::Load(
 		D3D12_RESOURCE_DIMENSION_TEXTURE2D, // D3D12_RESOURCE_DIMENSION Dimension
 		0,                                  // UINT64 Alignment
 		uint64_t(width),                    // UINT64 Width
-		uint32_t(height),                   // UINT Height
+		height,                             // UINT Height
 		1,                                  // UINT16 DepthOrArraySize
 		uint16_t(mipLevelCount),            // UINT16 MipLevels
 		format,                             // DXGI_FORMAT Format
@@ -316,8 +323,7 @@ DemoFramework::D3D12::Texture2D::Ptr DemoFramework::D3D12::Texture2D::Load(
 	destLoc.pResource = gpuTexture.Get();
 	destLoc.Type = D3D12_TEXTURE_COPY_TYPE_SUBRESOURCE_INDEX;
 
-	ID3D12Device* const pDevice = device.Get();
-	ID3D12GraphicsCommandList* const pCmdList = uploadCmdCtx->GetCmdList().Get();
+	const GraphicsCommandList::Ptr& cmdList = uploadCmdCtx->GetCmdList();
 
 	void* pStagingData = nullptr;
 
@@ -372,7 +378,7 @@ DemoFramework::D3D12::Texture2D::Ptr DemoFramework::D3D12::Texture2D::Load(
 		}
 
 		// Copy the staging data to the GPU-resident texture.
-		pCmdList->CopyTextureRegion(&destLoc, 0, 0, 0, &srcLoc, nullptr);
+		cmdList->CopyTextureRegion(&destLoc, 0, 0, 0, &srcLoc, nullptr);
 	}
 
 	// Unmap the staging texture.
@@ -389,7 +395,7 @@ DemoFramework::D3D12::Texture2D::Ptr DemoFramework::D3D12::Texture2D::Load(
 	barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_COPY_DEST;
 	barrier.Transition.StateAfter = D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE;
 
-	pCmdList->ResourceBarrier(1, &barrier);
+	cmdList->ResourceBarrier(1, &barrier);
 
 	// Create the staging command synchronization primitive so we can wait for
 	// all staging resource copies to complete at the end of initialization.
@@ -411,9 +417,13 @@ DemoFramework::D3D12::Texture2D::Ptr DemoFramework::D3D12::Texture2D::Load(
 
 	Ptr output = std::make_shared<Texture2D>();
 
-	output->m_resource = gpuTexture;
 	output->m_heap = heap;
-	output->m_initialized = true;
+	output->m_resource = gpuTexture;
+	output->m_cpuHandle = heap->GetCPUDescriptorHandleForHeapStart();
+	output->m_gpuHandle = heap->GetGPUDescriptorHandleForHeapStart();
+	output->m_width = width;
+	output->m_height = height;
+	output->m_format = format;
 
 	D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc;
 	srvDesc.Format = gpuResDesc.Format;
@@ -425,7 +435,7 @@ DemoFramework::D3D12::Texture2D::Ptr DemoFramework::D3D12::Texture2D::Load(
 	srvDesc.Texture2D.ResourceMinLODClamp = 0.0f;
 
 	// Create the SRV from the resource.
-	pDevice->CreateShaderResourceView(gpuTexture.Get(), &srvDesc, heap->GetCPUDescriptorHandleForHeapStart());
+	device->CreateShaderResourceView(gpuTexture.Get(), &srvDesc, output->m_cpuHandle);
 
 	return output;
 }

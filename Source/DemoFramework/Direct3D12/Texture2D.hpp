@@ -68,14 +68,26 @@ public:
 	);
 
 	const DescriptorHeap::Ptr& GetHeap() const;
+	const D3D12_CPU_DESCRIPTOR_HANDLE GetCpuHandle() const;
+	const D3D12_GPU_DESCRIPTOR_HANDLE GetGpuHandle() const;
+
+	uint32_t GetWidth() const;
+	uint32_t GetHeight() const;
+	DXGI_FORMAT GetFormat() const;
 
 
 private:
 
-	Resource::Ptr m_resource;
 	DescriptorHeap::Ptr m_heap;
+	Resource::Ptr m_resource;
 
-	bool m_initialized;
+	D3D12_CPU_DESCRIPTOR_HANDLE m_cpuHandle;
+	D3D12_GPU_DESCRIPTOR_HANDLE m_gpuHandle;
+
+	uint32_t m_width;
+	uint32_t m_height;
+
+	DXGI_FORMAT m_format;
 };
 
 //---------------------------------------------------------------------------------------------------------------------
@@ -85,9 +97,13 @@ template class DF_API std::shared_ptr<DemoFramework::D3D12::Texture2D>;
 //---------------------------------------------------------------------------------------------------------------------
 
 inline DemoFramework::D3D12::Texture2D::Texture2D()
-	: m_resource()
-	, m_heap()
-	, m_initialized(false)
+	: m_heap()
+	, m_resource()
+	, m_cpuHandle({0})
+	, m_gpuHandle({0})
+	, m_width(0)
+	, m_height(0)
+	, m_format(DXGI_FORMAT_UNKNOWN)
 {
 }
 
@@ -96,6 +112,41 @@ inline DemoFramework::D3D12::Texture2D::Texture2D()
 inline const DemoFramework::D3D12::DescriptorHeap::Ptr& DemoFramework::D3D12::Texture2D::GetHeap() const
 {
 	return m_heap;
+}
+
+//---------------------------------------------------------------------------------------------------------------------
+
+inline const D3D12_CPU_DESCRIPTOR_HANDLE DemoFramework::D3D12::Texture2D::GetCpuHandle() const
+{
+	return m_cpuHandle;
+}
+
+//---------------------------------------------------------------------------------------------------------------------
+
+inline const D3D12_GPU_DESCRIPTOR_HANDLE DemoFramework::D3D12::Texture2D::GetGpuHandle() const
+{
+	return m_gpuHandle;
+}
+
+//---------------------------------------------------------------------------------------------------------------------
+
+inline uint32_t DemoFramework::D3D12::Texture2D::GetWidth() const
+{
+	return m_width;
+}
+
+//---------------------------------------------------------------------------------------------------------------------
+
+inline uint32_t DemoFramework::D3D12::Texture2D::GetHeight() const
+{
+	return m_height;
+}
+
+//---------------------------------------------------------------------------------------------------------------------
+
+inline DXGI_FORMAT DemoFramework::D3D12::Texture2D::GetFormat() const
+{
+	return m_format;
 }
 
 //---------------------------------------------------------------------------------------------------------------------
