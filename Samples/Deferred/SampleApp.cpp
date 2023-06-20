@@ -62,14 +62,18 @@ bool SampleApp::Initialize(DemoFramework::Window* const pWindow)
 
 	LOG_WRITE("Initializing base render resources ...");
 
+	D3D12::RenderConfig renderConfig = D3D12::RenderConfig::Invalid;
+	renderConfig.backBufferWidth = clientWidth;
+	renderConfig.backBufferHeight = clientHeight;
+	renderConfig.backBufferCount = APP_BACK_BUFFER_COUNT;
+	renderConfig.cbvSrvUavDescCount = 100;
+	renderConfig.rtvDescCount = APP_BACK_BUFFER_COUNT;
+	renderConfig.dsvDescCount = 1;
+	renderConfig.backBufferFormat = APP_BACK_BUFFER_FORMAT;
+	renderConfig.depthFormat = APP_DEPTH_BUFFER_FORMAT;
+
 	// Initialize the common rendering resources.
-	m_renderBase = D3D12::RenderBase::Create(
-		hWnd,
-		clientWidth,
-		clientHeight,
-		APP_BACK_BUFFER_COUNT,
-		APP_BACK_BUFFER_FORMAT,
-		APP_DEPTH_BUFFER_FORMAT);
+	m_renderBase = D3D12::RenderBase::Create(hWnd, renderConfig);
 	if(!m_renderBase)
 	{
 		return false;
@@ -173,9 +177,7 @@ void SampleApp::Render()
 
 void SampleApp::Shutdown()
 {
-	// Clean up the common render resources last.
-	m_gui.reset();
-	m_renderBase.reset();
+	// Do explicit shutdown tasks here.
 }
 
 //---------------------------------------------------------------------------------------------------------------------

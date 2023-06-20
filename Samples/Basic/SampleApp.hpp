@@ -73,7 +73,6 @@ private:
 
 	DemoFramework::D3D12::RootSignature::Ptr m_rootSignature;
 	DemoFramework::D3D12::PipelineState::Ptr m_gfxPipeline;
-	DemoFramework::D3D12::DescriptorHeap::Ptr m_vertexShaderDescHeap;
 
 	DemoFramework::D3D12::Resource::Ptr m_quadVertexBuffer;
 	DemoFramework::D3D12::Resource::Ptr m_quadIndexBuffer;
@@ -83,6 +82,8 @@ private:
 
 	DemoFramework::D3D12::Blob::Ptr m_vertexShader;
 	DemoFramework::D3D12::Blob::Ptr m_pixelShader;
+
+	DemoFramework::D3D12::Descriptor m_vertexUniformDescriptor;
 
 	DemoFramework::FrameTimer m_frameTimer;
 
@@ -102,13 +103,13 @@ inline SampleApp::SampleApp()
 	, m_gui()
 	, m_rootSignature()
 	, m_gfxPipeline()
-	, m_vertexShaderDescHeap()
 	, m_quadVertexBuffer()
 	, m_quadIndexBuffer()
 	, m_constBuffer()
 	, m_stagingConstBuffer()
 	, m_vertexShader()
 	, m_pixelShader()
+	, m_vertexUniformDescriptor()
 	, m_frameTimer()
 	, m_worldMatrix()
 	, m_viewMatrix()

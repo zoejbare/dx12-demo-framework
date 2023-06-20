@@ -27,11 +27,12 @@
 
 DemoFramework::D3D12::DepthTarget::Ptr DemoFramework::D3D12::DepthTarget::Create(
 	const Device::Ptr& device,
+	const DescriptorAllocator::Ptr& dsvAlloc,
 	const uint32_t width,
 	const uint32_t height,
 	const DXGI_FORMAT format)
 {
-	if(!device || width == 0 || height == 0)
+	if(!device || !dsvAlloc || width == 0 || height == 0)
 	{
 		LOG_ERROR("Invalid parameter");
 		return Ptr();
@@ -52,6 +53,8 @@ DemoFramework::D3D12::DepthTarget::Ptr DemoFramework::D3D12::DepthTarget::Create
 
 	Ptr output = std::make_shared<DepthTarget>();
 
+	output->m_alloc = dsvAlloc;
+
 	constexpr DXGI_SAMPLE_DESC sampleDesc =
 	{
 		1, // UINT Count
@@ -65,14 +68,6 @@ DemoFramework::D3D12::DepthTarget::Ptr DemoFramework::D3D12::DepthTarget::Create
 		D3D12_MEMORY_POOL_UNKNOWN,       // D3D12_MEMORY_POOL MemoryPoolPreference
 		0,                               // UINT CreationNodeMask
 		0,                               // UINT VisibleNodeMask
-	};
-
-	constexpr D3D12_DESCRIPTOR_HEAP_DESC heapDesc =
-	{
-		D3D12_DESCRIPTOR_HEAP_TYPE_DSV,  // D3D12_DESCRIPTOR_HEAP_TYPE Type
-		1,                               // UINT NumDescriptors
-		D3D12_DESCRIPTOR_HEAP_FLAG_NONE, // D3D12_DESCRIPTOR_HEAP_FLAGS Flags
-		0,                               // UINT NodeMask
 	};
 
 	constexpr D3D12_RESOURCE_FLAGS resourceFlags = D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL;
@@ -104,26 +99,20 @@ DemoFramework::D3D12::DepthTarget::Ptr DemoFramework::D3D12::DepthTarget::Create
 		return Ptr();
 	}
 
-	// Create the DSV descriptor heap.
-	output->m_heap = CreateDescriptorHeap(device, heapDesc);
-	if(!output->m_heap)
-	{
-		return Ptr();
-	}
-
 	D3D12_DEPTH_STENCIL_VIEW_DESC dsvDesc;
 	dsvDesc.Format = format;
 	dsvDesc.ViewDimension = D3D12_DSV_DIMENSION_TEXTURE2D;
 	dsvDesc.Flags = D3D12_DSV_FLAG_NONE;
 	dsvDesc.Texture2D.MipSlice = 0;
 
-	// Get the DSV handle for its heap.
-	output->m_dsvHandle = output->m_heap->GetCPUDescriptorHandleForHeapStart();
+	const Descriptor descriptor = dsvAlloc->Allocate();
+	assert(descriptor.index != Descriptor::Invalid.index);
 
 	// Create the view.
-	device->CreateDepthStencilView(output->m_resource.Get(), &dsvDesc, output->m_dsvHandle);
+	device->CreateDepthStencilView(output->m_resource.Get(), &dsvDesc, descriptor.cpuHandle);
 
-	output->m_initialized = true;
+	output->m_alloc = dsvAlloc;
+	output->m_descriptor = descriptor;
 
 	return output;
 }

@@ -19,7 +19,7 @@
 
 //---------------------------------------------------------------------------------------------------------------------
 
-#include "LowLevel/Types.hpp"
+#include "DescriptorAllocator.hpp"
 
 #include <memory>
 
@@ -40,6 +40,7 @@ public:
 	BackBuffer();
 	BackBuffer(const BackBuffer&) = delete;
 	BackBuffer(BackBuffer&&) = delete;
+	~BackBuffer();
 
 	BackBuffer& operator =(const BackBuffer&) = delete;
 	BackBuffer& operator =(BackBuffer&&) = delete;
@@ -47,26 +48,22 @@ public:
 	static Ptr Create(
 		const Device::Ptr& device,
 		const SwapChain::Ptr& swapChain,
-		D3D12_DESCRIPTOR_HEAP_FLAGS flags,
-		uint32_t nodeMask
+		const DescriptorAllocator::Ptr& rtvAlloc
 	);
 
 	const Resource::Ptr& GetRtv(size_t bufferIndex) const;
-
-	D3D12_CPU_DESCRIPTOR_HANDLE GetCpuDescHandle(size_t bufferIndex) const;
+	const Descriptor& GetDescriptor(size_t bufferIndex) const;
 
 
 private:
 
-	Resource::Ptr m_rtv[DF_SWAP_CHAIN_BUFFER_MAX_COUNT];
-	DescriptorHeap::Ptr m_descHeap;
+	DescriptorAllocator::Ptr m_descAlloc;
 
-	D3D12_CPU_DESCRIPTOR_HANDLE m_cpuHandle;
+	Resource::Ptr m_rtv[DF_SWAP_CHAIN_BUFFER_MAX_COUNT];
+	Descriptor m_descriptor[DF_SWAP_CHAIN_BUFFER_MAX_COUNT];
 
 	uint32_t m_bufferCount;
 	uint32_t m_incrSize;
-
-	bool m_initialized;
 };
 
 //---------------------------------------------------------------------------------------------------------------------
@@ -76,13 +73,29 @@ template class DF_API std::shared_ptr<DemoFramework::D3D12::BackBuffer>;
 //---------------------------------------------------------------------------------------------------------------------
 
 inline DemoFramework::D3D12::BackBuffer::BackBuffer()
-	: m_rtv()
-	, m_descHeap()
-	, m_cpuHandle({0})
+	: m_descAlloc()
+	, m_rtv()
+	, m_descriptor()
 	, m_bufferCount(0)
 	, m_incrSize(0)
-	, m_initialized(false)
 {
+	for(size_t i = 0; i < DF_SWAP_CHAIN_BUFFER_MAX_COUNT; ++i)
+	{
+		m_descriptor[i] = Descriptor::Invalid;
+	}
+}
+
+//---------------------------------------------------------------------------------------------------------------------
+
+inline DemoFramework::D3D12::BackBuffer::~BackBuffer()
+{
+	if(m_descAlloc)
+	{
+		for(size_t i = 0; i < m_bufferCount; ++i)
+		{
+			m_descAlloc->Free(m_descriptor[i]);
+		}
+	}
 }
 
 //---------------------------------------------------------------------------------------------------------------------
@@ -96,14 +109,11 @@ inline const DemoFramework::D3D12::Resource::Ptr& DemoFramework::D3D12::BackBuff
 
 //---------------------------------------------------------------------------------------------------------------------
 
-inline D3D12_CPU_DESCRIPTOR_HANDLE DemoFramework::D3D12::BackBuffer::GetCpuDescHandle(const size_t bufferIndex) const
+inline const DemoFramework::D3D12::Descriptor& DemoFramework::D3D12::BackBuffer::GetDescriptor(const size_t bufferIndex) const
 {
 	assert(bufferIndex < m_bufferCount);
 
-	D3D12_CPU_DESCRIPTOR_HANDLE output = m_cpuHandle;
-	output.ptr += size_t(m_incrSize) * bufferIndex;
-
-	return output;
+	return m_descriptor[bufferIndex];
 }
 
 //---------------------------------------------------------------------------------------------------------------------

@@ -36,22 +36,41 @@
 
 //---------------------------------------------------------------------------------------------------------------------
 
-DemoFramework::D3D12::RenderBase::Ptr DemoFramework::D3D12::RenderBase::Create(
-	HWND hWnd,
-	const uint32_t backBufferWidth,
-	const uint32_t backBufferHeight,
-	const uint32_t backBufferCount,
-	const DXGI_FORMAT backBufferFormat,
-	const DXGI_FORMAT depthFormat)
+const DemoFramework::D3D12::RenderConfig DemoFramework::D3D12::RenderConfig::Invalid =
 {
-	if(!hWnd || backBufferWidth == 0 || backBufferHeight == 0 || backBufferCount == 0 || backBufferFormat == DXGI_FORMAT_UNKNOWN)
+	0,                   // uint32_t backBufferWidth
+	0,                   // uint32_t backBufferHeight
+	0,                   // uint32_t backBufferCount
+	0,                   // uint32_t cbvSrvUavDescCount
+	0,                   // uint32_t rtvDescCount
+	0,                   // uint32_t dsvDescCount
+	DXGI_FORMAT_UNKNOWN, // DXGI_FORMAT backBufferFormat
+	DXGI_FORMAT_UNKNOWN, // DXGI_FORMAT depthFormat
+};
+
+//---------------------------------------------------------------------------------------------------------------------
+
+DemoFramework::D3D12::RenderBase::Ptr DemoFramework::D3D12::RenderBase::Create(HWND hWnd, const RenderConfig& config)
+{
+	if(!hWnd
+		|| config.backBufferWidth == 0
+		|| config.backBufferHeight == 0
+		|| config.backBufferCount < 2
+		|| config.cbvSrvUavDescCount == 0
+		|| config.rtvDescCount < config.backBufferCount
+		|| config.dsvDescCount == 0
+		|| config.backBufferFormat == DXGI_FORMAT_UNKNOWN
+		|| config.depthFormat == DXGI_FORMAT_UNKNOWN)
 	{
 		LOG_ERROR("Invalid parameter");
 		return Ptr();
 	}
-	else if(backBufferCount > DF_SWAP_CHAIN_BUFFER_MAX_COUNT)
+	else if(config.backBufferCount > DF_SWAP_CHAIN_BUFFER_MAX_COUNT)
 	{
-		LOG_ERROR("Exceeded maximum swap chain buffer count; value='%" PRIu32 "', maximum='%" PRIu32 "'", backBufferCount, DF_SWAP_CHAIN_BUFFER_MAX_COUNT);
+		LOG_ERROR(
+			"Exceeded maximum swap chain buffer count; value='%" PRIu32 "', maximum='%" PRIu32 "'",
+			config.backBufferCount,
+			DF_SWAP_CHAIN_BUFFER_MAX_COUNT);
 		return Ptr();
 	}
 
@@ -59,13 +78,13 @@ DemoFramework::D3D12::RenderBase::Ptr DemoFramework::D3D12::RenderBase::Create(
 
 	LOG_WRITE("Creating D3D12 base resources ...");
 
-	output->m_bufferCount = backBufferCount;
+	output->m_bufferCount = config.backBufferCount;
 	output->m_bufferIndex = 0;
 
 	output->m_swapChainFlags = 0;
 	output->m_presentTearingFlag = 0;
 
-	output->m_depthFormat = depthFormat;
+	output->m_depthFormat = config.depthFormat;
 
 	// Verify the DirectX math library is supported on this CPU.
 	if(!DirectX::XMVerifyCPUSupport())
@@ -144,21 +163,6 @@ DemoFramework::D3D12::RenderBase::Ptr DemoFramework::D3D12::RenderBase::Create(
 		return Ptr();
 	}
 
-	const D3D12_DESCRIPTOR_HEAP_DESC depthDescHeapDesc =
-	{
-		D3D12_DESCRIPTOR_HEAP_TYPE_DSV,  // D3D12_DESCRIPTOR_HEAP_TYPE Type
-		1,                               // UINT NumDescriptors
-		D3D12_DESCRIPTOR_HEAP_FLAG_NONE, // D3D12_DESCRIPTOR_HEAP_FLAGS Flags
-		0,                               // UINT NodeMask
-	};
-
-	// Create the descriptor heap for the depth buffer.
-	output->m_depthDescHeap = D3D12::CreateDescriptorHeap(output->m_device, depthDescHeapDesc);
-	if(!output->m_depthDescHeap)
-	{
-		return Ptr();
-	}
-
 	const DXGI_SAMPLE_DESC sampleDesc =
 	{
 		1, // UINT Count
@@ -167,13 +171,13 @@ DemoFramework::D3D12::RenderBase::Ptr DemoFramework::D3D12::RenderBase::Create(
 
 	const DXGI_SWAP_CHAIN_DESC1 swapChainDesc =
 	{
-		backBufferWidth,               // UINT Width
-		backBufferHeight,              // UINT Height
-		backBufferFormat,              // DXGI_FORMAT Format
+		config.backBufferWidth,        // UINT Width
+		config.backBufferHeight,       // UINT Height
+		config.backBufferFormat,       // DXGI_FORMAT Format
 		false,                         // BOOL Stereo
 		sampleDesc,                    // DXGI_SAMPLE_DESC SampleDesc
 		DXGI_USAGE_BACK_BUFFER,        // DXGI_USAGE BufferUsage
-		backBufferCount,               // UINT BufferCount
+		config.backBufferCount,        // UINT BufferCount
 		DXGI_SCALING_STRETCH,          // DXGI_SCALING Scaling
 		DXGI_SWAP_EFFECT_FLIP_DISCARD, // DXGI_SWAP_EFFECT SwapEffect
 		DXGI_ALPHA_MODE_IGNORE,        // DXGI_ALPHA_MODE AlphaMode
@@ -201,8 +205,56 @@ DemoFramework::D3D12::RenderBase::Ptr DemoFramework::D3D12::RenderBase::Create(
 		return Ptr();
 	}
 
+	const D3D12_DESCRIPTOR_HEAP_DESC cbvHeapDesc =
+	{
+		D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV,    // D3D12_DESCRIPTOR_HEAP_TYPE Type
+		config.cbvSrvUavDescCount,                 // UINT NumDescriptors
+		D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE, // D3D12_DESCRIPTOR_HEAP_FLAGS Flags
+		0,                                         // UINT NodeMask
+	};
+
+	// Create the buffer view descriptor heap allocator.
+	output->m_cbvAlloc = DescriptorAllocator::Create(output->m_device, cbvHeapDesc);
+	if(!output->m_cbvAlloc)
+	{
+		return Ptr();
+	}
+
+	const D3D12_DESCRIPTOR_HEAP_DESC rtvHeapDesc =
+	{
+		D3D12_DESCRIPTOR_HEAP_TYPE_RTV,  // D3D12_DESCRIPTOR_HEAP_TYPE Type
+		config.rtvDescCount,             // UINT NumDescriptors
+		D3D12_DESCRIPTOR_HEAP_FLAG_NONE, // D3D12_DESCRIPTOR_HEAP_FLAGS Flags
+		0,                               // UINT NodeMask
+	};
+
+	// Create the RTV descriptor heap allocator.
+	output->m_rtvAlloc = DescriptorAllocator::Create(output->m_device, rtvHeapDesc);
+	if(!output->m_rtvAlloc)
+	{
+		return Ptr();
+	}
+
+	const D3D12_DESCRIPTOR_HEAP_DESC dsvHeapDesc =
+	{
+		D3D12_DESCRIPTOR_HEAP_TYPE_DSV,  // D3D12_DESCRIPTOR_HEAP_TYPE Type
+		config.dsvDescCount,             // UINT NumDescriptors
+		D3D12_DESCRIPTOR_HEAP_FLAG_NONE, // D3D12_DESCRIPTOR_HEAP_FLAGS Flags
+		0,                               // UINT NodeMask
+	};
+
+	// Create the DSV descriptor heap allocator.
+	output->m_dsvAlloc = DescriptorAllocator::Create(output->m_device, dsvHeapDesc);
+	if(!output->m_dsvAlloc)
+	{
+		return Ptr();
+	}
+
+	// Allocate a descriptor for the depth/stencil view.
+	output->m_dsvDescriptor = output->m_dsvAlloc->Allocate();
+
 	// Get render target views for each back buffer in the swap chain.
-	output->m_backBuffer = BackBuffer::Create(output->m_device, output->m_swapChain, D3D12_DESCRIPTOR_HEAP_FLAG_NONE, 0);
+	output->m_backBuffer = BackBuffer::Create(output->m_device, output->m_swapChain, output->m_rtvAlloc);
 	if(!output->m_backBuffer)
 	{
 		return Ptr();
@@ -216,7 +268,7 @@ DemoFramework::D3D12::RenderBase::Ptr DemoFramework::D3D12::RenderBase::Create(
 	}
 
 	// Create per-frame resources.
-	for(size_t bufferIndex = 0; bufferIndex < backBufferCount; ++bufferIndex)
+	for(size_t bufferIndex = 0; bufferIndex < config.backBufferCount; ++bufferIndex)
 	{
 		// Initialize the draw context for the current buffer.
 		output->m_drawContext[bufferIndex] = GraphicsCommandContext::Create(output->m_device, D3D12_COMMAND_LIST_TYPE_DIRECT);
@@ -300,7 +352,7 @@ void DemoFramework::D3D12::RenderBase::BeginFrame()
 		m_device->CreateDepthStencilView(
 			m_depthBuffer.Get(),
 			&depthViewDesc,
-			m_depthDescHeap->GetCPUDescriptorHandleForHeapStart()
+			m_dsvDescriptor.cpuHandle
 		);
 	}
 
@@ -311,7 +363,7 @@ void DemoFramework::D3D12::RenderBase::BeginFrame()
 	ID3D12GraphicsCommandList* const pCmdList = drawContext->GetCmdList().Get();
 	ID3D12Resource* const pBackBufferRtv = m_backBuffer->GetRtv(m_bufferIndex).Get();
 
-	const D3D12_CPU_DESCRIPTOR_HANDLE rtvHandle = m_backBuffer->GetCpuDescHandle(m_bufferIndex);
+	const Descriptor rtvDescriptor = m_backBuffer->GetDescriptor(m_bufferIndex);
 
 	// Wait for the command queue to finish processing the current back buffer.
 	prv_waitForFrame(m_bufferIndex);
@@ -333,8 +385,8 @@ void DemoFramework::D3D12::RenderBase::BeginFrame()
 	const float32_t clearColor[4] = { 0.0f, 0.1f, 0.175f, 1.0f };
 
 	// Clear the back buffer and depth buffer.
-	pCmdList->ClearRenderTargetView(rtvHandle, clearColor, 0, nullptr);
-	pCmdList->ClearDepthStencilView(m_depthDescHeap->GetCPUDescriptorHandleForHeapStart(), D3D12_CLEAR_FLAG_DEPTH, 1.0f, 0, 0, nullptr);
+	pCmdList->ClearRenderTargetView(rtvDescriptor.cpuHandle, clearColor, 0, nullptr);
+	pCmdList->ClearDepthStencilView(m_dsvDescriptor.cpuHandle, D3D12_CLEAR_FLAG_DEPTH, 1.0f, 0, 0, nullptr);
 }
 
 //---------------------------------------------------------------------------------------------------------------------
@@ -392,7 +444,7 @@ bool DemoFramework::D3D12::RenderBase::ResizeSwapChain()
 	m_swapChain->ResizeBuffers(0, 0, 0, DXGI_FORMAT_UNKNOWN, m_swapChainFlags);
 
 	// Create new back buffer resources from the resized swap chain.
-	m_backBuffer = BackBuffer::Create(m_device, m_swapChain, D3D12_DESCRIPTOR_HEAP_FLAG_NONE, 0);
+	m_backBuffer = BackBuffer::Create(m_device, m_swapChain, m_rtvAlloc);
 
 	// Clear the depth buffer so it's created again at the beginning of the frame.
 	m_depthBuffer.Reset();
@@ -404,17 +456,16 @@ bool DemoFramework::D3D12::RenderBase::ResizeSwapChain()
 
 void DemoFramework::D3D12::RenderBase::SetBackBufferAsRenderTarget()
 {
-	const D3D12_CPU_DESCRIPTOR_HANDLE depthTargetHandle = m_depthDescHeap->GetCPUDescriptorHandleForHeapStart();
-	const D3D12_CPU_DESCRIPTOR_HANDLE renderTargetHandles[] =
+	const D3D12_CPU_DESCRIPTOR_HANDLE rtvHandles[] =
 	{
-		m_backBuffer->GetCpuDescHandle(m_bufferIndex),
+		m_backBuffer->GetDescriptor(m_bufferIndex).cpuHandle,
 	};
 
 	const GraphicsCommandContext::Ptr& drawContext = m_drawContext[m_bufferIndex];
 	ID3D12GraphicsCommandList* const pCmdList = drawContext->GetCmdList().Get();
 
 	// Set the back buffer as the render target along with the base depth target.
-	pCmdList->OMSetRenderTargets(1, renderTargetHandles, false, &depthTargetHandle);
+	pCmdList->OMSetRenderTargets(_countof(rtvHandles), rtvHandles, false, &m_dsvDescriptor.cpuHandle);
 }
 
 //---------------------------------------------------------------------------------------------------------------------

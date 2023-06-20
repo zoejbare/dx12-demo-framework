@@ -20,6 +20,7 @@
 //---------------------------------------------------------------------------------------------------------------------
 
 #include "CommandContext.hpp"
+#include "DescriptorAllocator.hpp"
 
 #include <memory>
 
@@ -53,6 +54,7 @@ public:
 	Texture2D();
 	Texture2D(const Texture2D&) = delete;
 	Texture2D(Texture2D&&) = delete;
+	~Texture2D();
 
 	Texture2D& operator =(const Texture2D&) = delete;
 	Texture2D& operator =(Texture2D&&) = delete;
@@ -61,15 +63,15 @@ public:
 		const Device::Ptr& device,
 		const CommandQueue::Ptr& cmdQueue,
 		const GraphicsCommandContext::Ptr& uploadCmdCtx,
+		const DescriptorAllocator::Ptr& srvAlloc,
 		DataType dataType,
 		Channel channel,
 		const char* filePath,
 		uint32_t mipCount = D3D12_REQ_MIP_LEVELS
 	);
 
-	const DescriptorHeap::Ptr& GetHeap() const;
-	const D3D12_CPU_DESCRIPTOR_HANDLE GetCpuHandle() const;
-	const D3D12_GPU_DESCRIPTOR_HANDLE GetGpuHandle() const;
+	const DescriptorAllocator::Ptr& GetSrvAllocator() const;
+	const Descriptor& GetDescriptor() const;
 
 	uint32_t GetWidth() const;
 	uint32_t GetHeight() const;
@@ -78,11 +80,10 @@ public:
 
 private:
 
-	DescriptorHeap::Ptr m_heap;
 	Resource::Ptr m_resource;
+	DescriptorAllocator::Ptr m_alloc;
 
-	D3D12_CPU_DESCRIPTOR_HANDLE m_cpuHandle;
-	D3D12_GPU_DESCRIPTOR_HANDLE m_gpuHandle;
+	Descriptor m_descriptor;
 
 	uint32_t m_width;
 	uint32_t m_height;
@@ -97,10 +98,9 @@ template class DF_API std::shared_ptr<DemoFramework::D3D12::Texture2D>;
 //---------------------------------------------------------------------------------------------------------------------
 
 inline DemoFramework::D3D12::Texture2D::Texture2D()
-	: m_heap()
-	, m_resource()
-	, m_cpuHandle({0})
-	, m_gpuHandle({0})
+	: m_resource()
+	, m_alloc()
+	, m_descriptor()
 	, m_width(0)
 	, m_height(0)
 	, m_format(DXGI_FORMAT_UNKNOWN)
@@ -109,23 +109,26 @@ inline DemoFramework::D3D12::Texture2D::Texture2D()
 
 //---------------------------------------------------------------------------------------------------------------------
 
-inline const DemoFramework::D3D12::DescriptorHeap::Ptr& DemoFramework::D3D12::Texture2D::GetHeap() const
+inline DemoFramework::D3D12::Texture2D::~Texture2D()
 {
-	return m_heap;
+	if(m_alloc)
+	{
+		m_alloc->Free(m_descriptor);
+	}
 }
 
 //---------------------------------------------------------------------------------------------------------------------
 
-inline const D3D12_CPU_DESCRIPTOR_HANDLE DemoFramework::D3D12::Texture2D::GetCpuHandle() const
+inline const DemoFramework::D3D12::DescriptorAllocator::Ptr& DemoFramework::D3D12::Texture2D::GetSrvAllocator() const
 {
-	return m_cpuHandle;
+	return m_alloc;
 }
 
 //---------------------------------------------------------------------------------------------------------------------
 
-inline const D3D12_GPU_DESCRIPTOR_HANDLE DemoFramework::D3D12::Texture2D::GetGpuHandle() const
+inline const DemoFramework::D3D12::Descriptor& DemoFramework::D3D12::Texture2D::GetDescriptor() const
 {
-	return m_gpuHandle;
+	return m_descriptor;
 }
 
 //---------------------------------------------------------------------------------------------------------------------

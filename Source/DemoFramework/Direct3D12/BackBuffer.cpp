@@ -29,10 +29,9 @@
 DemoFramework::D3D12::BackBuffer::Ptr DemoFramework::D3D12::BackBuffer::Create(
 	const Device::Ptr& device,
 	const SwapChain::Ptr& swapChain,
-	const D3D12_DESCRIPTOR_HEAP_FLAGS flags,
-	const uint32_t nodeMask)
+	const DescriptorAllocator::Ptr& rtvAlloc)
 {
-	if(!device || !swapChain)
+	if(!device || !swapChain || !rtvAlloc)
 	{
 		LOG_ERROR("Invalid parameter");
 		return Ptr();
@@ -42,30 +41,6 @@ DemoFramework::D3D12::BackBuffer::Ptr DemoFramework::D3D12::BackBuffer::Create(
 
 	DXGI_SWAP_CHAIN_DESC1 swapChainDesc;
 	swapChain->GetDesc1(&swapChainDesc);
-
-	output->m_bufferCount = swapChainDesc.BufferCount;
-
-	const D3D12_DESCRIPTOR_HEAP_DESC descHeapDesc =
-	{
-		D3D12_DESCRIPTOR_HEAP_TYPE_RTV, // D3D12_DESCRIPTOR_HEAP_TYPE Type
-		output->m_bufferCount,          // UINT NumDescriptors
-		flags,                          // D3D12_DESCRIPTOR_HEAP_FLAGS Flags
-		nodeMask,                       // UINT NodeMask
-	};
-
-	// Create a descriptor heap associated with this set of back buffers.
-	output->m_descHeap = CreateDescriptorHeap(device, descHeapDesc);
-	if(!output->m_descHeap)
-	{
-		return Ptr();
-	}
-
-	// Get the start of the descriptor heap memory.
-	D3D12_CPU_DESCRIPTOR_HANDLE tempHandle = output->m_descHeap->GetCPUDescriptorHandleForHeapStart();
-
-	// Cache the original descriptor handle value before we modify it creating the RTVs.
-	output->m_cpuHandle = tempHandle;
-	output->m_incrSize = device->GetDescriptorHandleIncrementSize(descHeapDesc.Type);
 
 	// Create RTVs for each back buffer in the swap chain.
 	for(uint32_t bufferIndex = 0; bufferIndex < swapChainDesc.BufferCount; ++bufferIndex)
@@ -79,14 +54,17 @@ DemoFramework::D3D12::BackBuffer::Ptr DemoFramework::D3D12::BackBuffer::Create(
 			return Ptr();
 		}
 
+		// Allocate a new descriptor in the heap for the current buffer.
+		const Descriptor descriptor = rtvAlloc->Allocate();
+		assert(descriptor.index != Descriptor::Invalid.index);
+
 		// Create the RTV for the current back buffer resource.
-		device->CreateRenderTargetView(pBuffer.Get(), nullptr, tempHandle);
+		device->CreateRenderTargetView(pBuffer.Get(), nullptr, descriptor.cpuHandle);
 
-		// Update the handle pointer to reference the next buffer in the descriptor.
-		tempHandle.ptr += size_t(output->m_incrSize);
+		output->m_descAlloc = rtvAlloc;
+		output->m_descriptor[bufferIndex] = descriptor;
+		output->m_bufferCount = swapChainDesc.BufferCount;
 	}
-
-	output->m_initialized = true;
 
 	return output;
 }

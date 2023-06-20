@@ -27,11 +27,13 @@
 
 DemoFramework::D3D12::RenderTarget::Ptr DemoFramework::D3D12::RenderTarget::Create(
 	const Device::Ptr& device,
+	const DescriptorAllocator::Ptr& rtvAlloc,
+	const DescriptorAllocator::Ptr& srvAlloc,
 	const uint32_t width,
 	const uint32_t height,
 	const DXGI_FORMAT format)
 {
-	if(!device || width == 0 || height == 0)
+	if(!device || !rtvAlloc || !srvAlloc || width == 0 || height == 0)
 	{
 		LOG_ERROR("Invalid parameter");
 		return Ptr();
@@ -67,22 +69,6 @@ DemoFramework::D3D12::RenderTarget::Ptr DemoFramework::D3D12::RenderTarget::Crea
 		0,                               // UINT VisibleNodeMask
 	};
 
-	constexpr D3D12_DESCRIPTOR_HEAP_DESC rtvHeapDesc =
-	{
-		D3D12_DESCRIPTOR_HEAP_TYPE_RTV,  // D3D12_DESCRIPTOR_HEAP_TYPE Type
-		1,                               // UINT NumDescriptors
-		D3D12_DESCRIPTOR_HEAP_FLAG_NONE, // D3D12_DESCRIPTOR_HEAP_FLAGS Flags
-		0,                               // UINT NodeMask
-	};
-
-	constexpr D3D12_DESCRIPTOR_HEAP_DESC srvHeapDesc =
-	{
-		D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV,    // D3D12_DESCRIPTOR_HEAP_TYPE Type
-		1,                                         // UINT NumDescriptors
-		D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE, // D3D12_DESCRIPTOR_HEAP_FLAGS Flags
-		0,                                         // UINT NodeMask
-	};
-
 	constexpr D3D12_RESOURCE_FLAGS resourceFlags = D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET;
 	constexpr D3D12_HEAP_FLAGS heapFlags = D3D12_HEAP_FLAG_ALLOW_ALL_BUFFERS_AND_TEXTURES;
 	constexpr D3D12_RESOURCE_STATES initialStates = D3D12_RESOURCE_STATE_RENDER_TARGET;
@@ -115,19 +101,8 @@ DemoFramework::D3D12::RenderTarget::Ptr DemoFramework::D3D12::RenderTarget::Crea
 		return Ptr();
 	}
 
-	// Create the RTV descriptor heap.
-	output->m_rtvHeap = CreateDescriptorHeap(device, rtvHeapDesc);
-	if(!output->m_rtvHeap)
-	{
-		return Ptr();
-	}
-
-	// Create the SRV descriptor heap.
-	output->m_srvHeap = CreateDescriptorHeap(device, srvHeapDesc);
-	if(!output->m_srvHeap)
-	{
-		return Ptr();
-	}
+	const Descriptor rtvDescriptor = rtvAlloc->Allocate();
+	const Descriptor srvDescriptor = srvAlloc->Allocate();
 
 	D3D12_RENDER_TARGET_VIEW_DESC rtvDesc;
 	rtvDesc.Format = format;
@@ -144,16 +119,15 @@ DemoFramework::D3D12::RenderTarget::Ptr DemoFramework::D3D12::RenderTarget::Crea
 	srvDesc.Texture2D.PlaneSlice = 0;
 	srvDesc.Texture2D.ResourceMinLODClamp = 0.0f;
 
-	// Get the RTV & SRV handles for their respective heaps.
-	output->m_rtvHandle = output->m_rtvHeap->GetCPUDescriptorHandleForHeapStart();
-	output->m_srvHandle = output->m_srvHeap->GetCPUDescriptorHandleForHeapStart();
-
 	// Create the views.
-	device->CreateRenderTargetView(output->m_resource.Get(), &rtvDesc, output->m_rtvHandle);
-	device->CreateShaderResourceView(output->m_resource.Get(), &srvDesc, output->m_srvHandle);
+	device->CreateRenderTargetView(output->m_resource.Get(), &rtvDesc, rtvDescriptor.cpuHandle);
+	device->CreateShaderResourceView(output->m_resource.Get(), &srvDesc, srvDescriptor.cpuHandle);
 
+	output->m_rtvAlloc = rtvAlloc;
+	output->m_srvAlloc = srvAlloc;
+	output->m_rtvDescriptor = rtvDescriptor;
+	output->m_srvDescriptor = srvDescriptor;
 	output->m_currentStates = initialStates;
-	output->m_initialized = true;
 
 	return output;
 }
@@ -162,7 +136,7 @@ DemoFramework::D3D12::RenderTarget::Ptr DemoFramework::D3D12::RenderTarget::Crea
 
 void DemoFramework::D3D12::RenderTarget::TransitionTo(const GraphicsCommandList::Ptr& cmdList, const D3D12_RESOURCE_STATES states)
 {
-	if(m_initialized && states != m_currentStates)
+	if(states != m_currentStates)
 	{
 		D3D12_RESOURCE_BARRIER barrier;
 		barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;

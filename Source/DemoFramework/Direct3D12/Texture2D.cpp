@@ -34,12 +34,13 @@ DemoFramework::D3D12::Texture2D::Ptr DemoFramework::D3D12::Texture2D::Load(
 	const Device::Ptr& device,
 	const CommandQueue::Ptr& cmdQueue,
 	const GraphicsCommandContext::Ptr& uploadCmdCtx,
+	const DescriptorAllocator::Ptr& srvAlloc,
 	const DataType dataType,
 	const Channel channel,
 	const char* const filePath,
 	const uint32_t mipCount)
 {
-	if(!device || !cmdQueue || !uploadCmdCtx || !filePath || filePath[0] == '\0' || mipCount == 0)
+	if(!device || !cmdQueue || !uploadCmdCtx || !srvAlloc || !filePath || filePath[0] == '\0' || mipCount == 0)
 	{
 		LOG_ERROR("Invalid parameter");
 		return Ptr();
@@ -235,14 +236,6 @@ DemoFramework::D3D12::Texture2D::Ptr DemoFramework::D3D12::Texture2D::Load(
 		0,                               // UINT VisibleNodeMask
 	};
 
-	constexpr D3D12_DESCRIPTOR_HEAP_DESC heapDesc =
-	{
-		D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV,    // D3D12_DESCRIPTOR_HEAP_TYPE Type
-		1,                                         // UINT NumDescriptors
-		D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE, // D3D12_DESCRIPTOR_HEAP_FLAGS Flags
-		0,                                         // UINT NodeMask
-	};
-
 	constexpr DXGI_SAMPLE_DESC defaultSampleDesc =
 	{
 		1, // UINT Count
@@ -303,13 +296,6 @@ DemoFramework::D3D12::Texture2D::Ptr DemoFramework::D3D12::Texture2D::Load(
 		D3D12_HEAP_FLAG_NONE,
 		D3D12_RESOURCE_STATE_COPY_DEST);
 	if(!gpuTexture)
-	{
-		return Ptr();
-	}
-
-	// Create the texture's descriptor heap.
-	DescriptorHeap::Ptr heap = CreateDescriptorHeap(device, heapDesc);
-	if(!heap)
 	{
 		return Ptr();
 	}
@@ -415,15 +401,7 @@ DemoFramework::D3D12::Texture2D::Ptr DemoFramework::D3D12::Texture2D::Load(
 	// Reset the command list so it can be used again.
 	uploadCmdCtx->Reset();
 
-	Ptr output = std::make_shared<Texture2D>();
-
-	output->m_heap = heap;
-	output->m_resource = gpuTexture;
-	output->m_cpuHandle = heap->GetCPUDescriptorHandleForHeapStart();
-	output->m_gpuHandle = heap->GetGPUDescriptorHandleForHeapStart();
-	output->m_width = width;
-	output->m_height = height;
-	output->m_format = format;
+	const Descriptor descriptor = srvAlloc->Allocate();
 
 	D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc;
 	srvDesc.Format = gpuResDesc.Format;
@@ -435,7 +413,16 @@ DemoFramework::D3D12::Texture2D::Ptr DemoFramework::D3D12::Texture2D::Load(
 	srvDesc.Texture2D.ResourceMinLODClamp = 0.0f;
 
 	// Create the SRV from the resource.
-	device->CreateShaderResourceView(gpuTexture.Get(), &srvDesc, output->m_cpuHandle);
+	device->CreateShaderResourceView(gpuTexture.Get(), &srvDesc, descriptor.cpuHandle);
+
+	Ptr output = std::make_shared<Texture2D>();
+
+	output->m_resource = gpuTexture;
+	output->m_alloc = srvAlloc;
+	output->m_descriptor = descriptor;
+	output->m_width = width;
+	output->m_height = height;
+	output->m_format = format;
 
 	return output;
 }

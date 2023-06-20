@@ -108,14 +108,18 @@ bool SampleApp::Initialize(DemoFramework::Window* const pWindow)
 
 	LOG_WRITE("Initializing base render resources ...");
 
+	D3D12::RenderConfig renderConfig = D3D12::RenderConfig::Invalid;
+	renderConfig.backBufferWidth = clientWidth;
+	renderConfig.backBufferHeight = clientHeight;
+	renderConfig.backBufferCount = APP_BACK_BUFFER_COUNT;
+	renderConfig.cbvSrvUavDescCount = 100;
+	renderConfig.rtvDescCount = APP_BACK_BUFFER_COUNT;
+	renderConfig.dsvDescCount = 1;
+	renderConfig.backBufferFormat = APP_BACK_BUFFER_FORMAT;
+	renderConfig.depthFormat = APP_DEPTH_BUFFER_FORMAT;
+
 	// Initialize the common rendering resources.
-	m_renderBase = D3D12::RenderBase::Create(
-		hWnd,
-		clientWidth,
-		clientHeight,
-		APP_BACK_BUFFER_COUNT,
-		APP_BACK_BUFFER_FORMAT,
-		APP_DEPTH_BUFFER_FORMAT);
+	m_renderBase = D3D12::RenderBase::Create(hWnd, renderConfig);
 	if(!m_renderBase)
 	{
 		return false;
@@ -245,7 +249,7 @@ void SampleApp::Render()
 
 	ID3D12DescriptorHeap* const pDescHeaps[] =
 	{
-		m_vertexShaderDescHeap.Get(),
+		m_renderBase->GetCbvSrvUavAllocator()->GetHeap().Get(),
 	};
 
 	D3D12_RESOURCE_BARRIER constBufferBeginBarrier, constBufferEndBarrier;
@@ -272,7 +276,7 @@ void SampleApp::Render()
 	// Set the graphics pipeline state.
 	pCmdList->SetGraphicsRootSignature(m_rootSignature.Get());
 	pCmdList->SetDescriptorHeaps(_countof(pDescHeaps), pDescHeaps);
-	pCmdList->SetGraphicsRootDescriptorTable(0, m_vertexShaderDescHeap->GetGPUDescriptorHandleForHeapStart());
+	pCmdList->SetGraphicsRootDescriptorTable(0, m_vertexUniformDescriptor.gpuHandle);
 	pCmdList->SetPipelineState(m_gfxPipeline.Get());
 
 	const D3D12_VERTEX_BUFFER_VIEW vertexBufferView =
@@ -329,22 +333,7 @@ void SampleApp::Render()
 
 void SampleApp::Shutdown()
 {
-	// Clean up the application render resources.
-	m_rootSignature.Reset();
-	m_gfxPipeline.Reset();
-	m_quadVertexBuffer.Reset();
-	m_quadIndexBuffer.Reset();
-	m_constBuffer.Reset();
-	m_vertexShaderDescHeap.Reset();
-
-	for(size_t i = 0; i < DF_SWAP_CHAIN_BUFFER_MAX_COUNT; ++i)
-	{
-		m_stagingConstBuffer[i].Reset();
-	}
-
-	// Clean up the common render resources last.
-	m_gui.reset();
-	m_renderBase.reset();
+	// Do explicit shutdown tasks here.
 }
 
 //---------------------------------------------------------------------------------------------------------------------
@@ -873,20 +862,7 @@ bool SampleApp::prv_createConstBuffer()
 		}
 	}
 
-	const D3D12_DESCRIPTOR_HEAP_DESC vertexShaderDescHeapDesc =
-	{
-		D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV,    // D3D12_DESCRIPTOR_HEAP_TYPE Type
-		1,                                         // UINT NumDescriptors
-		D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE, // D3D12_DESCRIPTOR_HEAP_FLAGS Flags
-		0,                                         // UINT NodeMask
-	};
-
-	// Create the descriptor heap for the vertex shader resource inputs.
-	m_vertexShaderDescHeap = D3D12::CreateDescriptorHeap(pDevice, vertexShaderDescHeapDesc);
-	if(!m_vertexShaderDescHeap)
-	{
-		return false;
-	}
+	m_vertexUniformDescriptor = m_renderBase->GetCbvSrvUavAllocator()->Allocate();
 
 	const D3D12_CONSTANT_BUFFER_VIEW_DESC constBufferViewDesc =
 	{
@@ -895,7 +871,7 @@ bool SampleApp::prv_createConstBuffer()
 	};
 
 	// Create the constant buffer view for the vertex shader.
-	pDevice->CreateConstantBufferView(&constBufferViewDesc, m_vertexShaderDescHeap->GetCPUDescriptorHandleForHeapStart());
+	pDevice->CreateConstantBufferView(&constBufferViewDesc, m_vertexUniformDescriptor.cpuHandle);
 
 	return true;
 }

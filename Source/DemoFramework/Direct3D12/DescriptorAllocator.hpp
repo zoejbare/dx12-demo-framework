@@ -19,94 +19,106 @@
 
 //---------------------------------------------------------------------------------------------------------------------
 
-#include "DescriptorAllocator.hpp"
+#include "LowLevel/Types.hpp"
 
 #include <memory>
+#include <set>
 
 //---------------------------------------------------------------------------------------------------------------------
 
 namespace DemoFramework { namespace D3D12 {
-	class DepthTarget;
+	class DescriptorAllocator;
+
+	struct DF_API Descriptor
+	{
+		static const Descriptor Invalid;
+
+		D3D12_CPU_DESCRIPTOR_HANDLE cpuHandle;
+		D3D12_GPU_DESCRIPTOR_HANDLE gpuHandle;
+
+		uint32_t index;
+	};
 }}
 
 //---------------------------------------------------------------------------------------------------------------------
 
-class DF_API DemoFramework::D3D12::DepthTarget
+class DF_API DemoFramework::D3D12::DescriptorAllocator
 {
 public:
 
-	typedef std::shared_ptr<DepthTarget> Ptr;
+	typedef std::shared_ptr<DescriptorAllocator> Ptr;
 
-	DepthTarget();
-	DepthTarget(const DepthTarget&) = delete;
-	DepthTarget(DepthTarget&&) = delete;
-	~DepthTarget();
+	DescriptorAllocator();
+	DescriptorAllocator(const DescriptorAllocator&) = delete;
+	DescriptorAllocator(DescriptorAllocator&&) = delete;
+	~DescriptorAllocator();
 
-	DepthTarget& operator =(const DepthTarget&) = delete;
-	DepthTarget& operator =(DepthTarget&&) = delete;
+	DescriptorAllocator& operator =(const DescriptorAllocator&) = delete;
+	DescriptorAllocator& operator =(DescriptorAllocator&&) = delete;
 
-	static Ptr Create(
-		const Device::Ptr& device,
-		const DescriptorAllocator::Ptr& dsvAlloc,
-		uint32_t width,
-		uint32_t height,
-		DXGI_FORMAT format);
+	static Ptr Create(const Device::Ptr& device, const D3D12_DESCRIPTOR_HEAP_DESC& desc);
 
-	const Resource::Ptr& GetResource() const;
-	const DescriptorAllocator::Ptr& GetAllocator() const;
-	const Descriptor& GetDescriptor() const;
+	Descriptor Allocate();
+	void Free(Descriptor& descriptor);
+
+	const DescriptorHeap::Ptr& GetHeap() const;
+
+	uint32_t GetTotalLength() const;
+	uint32_t GetCurrentLength() const;
 
 
 private:
 
-	Resource::Ptr m_resource;
-	DescriptorAllocator::Ptr m_alloc;
+	struct FreeList;
 
-	Descriptor m_descriptor;
+	DescriptorHeap::Ptr m_heap;
+	FreeList* m_pFreeList;
+
+	size_t m_incrSize;
+
+	uint32_t m_totalLength;
+	uint32_t m_currentLength;
+
+	uint32_t m_lastIndex;
+	uint32_t m_tailIndex;
 };
 
 //---------------------------------------------------------------------------------------------------------------------
 
-template class DF_API std::shared_ptr<DemoFramework::D3D12::DepthTarget>;
+template class DF_API std::shared_ptr<DemoFramework::D3D12::DescriptorAllocator>;
 
 //---------------------------------------------------------------------------------------------------------------------
 
-inline DemoFramework::D3D12::DepthTarget::DepthTarget()
-	: m_resource()
-	, m_alloc()
-	, m_descriptor(Descriptor::Invalid)
+inline DemoFramework::D3D12::DescriptorAllocator::DescriptorAllocator()
+	: m_heap()
+	, m_pFreeList(nullptr)
+	, m_incrSize(0)
+	, m_totalLength(0)
+	, m_currentLength(0)
+	, m_lastIndex(0)
+	, m_tailIndex(0)
 {
 }
 
 //---------------------------------------------------------------------------------------------------------------------
 
-inline DemoFramework::D3D12::DepthTarget::~DepthTarget()
+inline const DemoFramework::D3D12::DescriptorHeap::Ptr& DemoFramework::D3D12::DescriptorAllocator::GetHeap() const
 {
-	if(m_alloc)
-	{
-		m_alloc->Free(m_descriptor);
-	}
+	return m_heap;
 }
 
 //---------------------------------------------------------------------------------------------------------------------
 
-inline const DemoFramework::D3D12::Resource::Ptr& DemoFramework::D3D12::DepthTarget::GetResource() const
+inline uint32_t DemoFramework::D3D12::DescriptorAllocator::GetTotalLength() const
 {
-	return m_resource;
+	return m_totalLength;
 }
 
 //---------------------------------------------------------------------------------------------------------------------
 
-inline const DemoFramework::D3D12::DescriptorAllocator::Ptr& DemoFramework::D3D12::DepthTarget::GetAllocator() const
+inline uint32_t DemoFramework::D3D12::DescriptorAllocator::GetCurrentLength() const
 {
-	return m_alloc;
-}
-
-//---------------------------------------------------------------------------------------------------------------------
-
-inline const DemoFramework::D3D12::Descriptor& DemoFramework::D3D12::DepthTarget::GetDescriptor() const
-{
-	return m_descriptor;
+	return m_currentLength;
 }
 
 //---------------------------------------------------------------------------------------------------------------------

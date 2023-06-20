@@ -34,8 +34,6 @@ DemoFramework::D3D12::Blob::Ptr DemoFramework::D3D12::LoadShaderFromFile(const c
 		return nullptr;
 	}
 
-	LOG_WRITE("Loading shader '%s' ...", filePath);
-
 	// Open the input file.
 	FILE* const pFile = fopen(filePath, "rb");
 	if(!pFile)

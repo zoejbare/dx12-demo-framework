@@ -19,7 +19,7 @@
 
 //---------------------------------------------------------------------------------------------------------------------
 
-#include "LowLevel/Types.hpp"
+#include "DescriptorAllocator.hpp"
 
 #include <memory>
 
@@ -40,32 +40,40 @@ public:
 	RenderTarget();
 	RenderTarget(const RenderTarget&) = delete;
 	RenderTarget(RenderTarget&&) = delete;
+	~RenderTarget();
 
 	RenderTarget& operator =(const RenderTarget&) = delete;
 	RenderTarget& operator =(RenderTarget&&) = delete;
 
-	static Ptr Create(const Device::Ptr& device, uint32_t width, uint32_t height, DXGI_FORMAT format);
+	static Ptr Create(
+		const Device::Ptr& device,
+		const DescriptorAllocator::Ptr& rtvAlloc,
+		const DescriptorAllocator::Ptr& srvAlloc,
+		uint32_t width,
+		uint32_t height,
+		DXGI_FORMAT format
+	);
 
 	void TransitionTo(const GraphicsCommandList::Ptr& cmdList, D3D12_RESOURCE_STATES states);
 
 	const Resource::Ptr& GetResource() const;
-	const DescriptorHeap::Ptr& GetRtvHeap() const;
-	const DescriptorHeap::Ptr& GetSrvHeap() const;
+	const DescriptorAllocator::Ptr& GetRtvAllocator() const;
+	const DescriptorAllocator::Ptr& GetSrvAllocator() const;
+	const Descriptor& GetRtvDescriptor() const;
+	const Descriptor& GetSrvDescriptor() const;
 
 
 private:
 
 	Resource::Ptr m_resource;
 
-	DescriptorHeap::Ptr m_rtvHeap;
-	DescriptorHeap::Ptr m_srvHeap;
+	DescriptorAllocator::Ptr m_rtvAlloc;
+	DescriptorAllocator::Ptr m_srvAlloc;
 
-	D3D12_CPU_DESCRIPTOR_HANDLE m_rtvHandle;
-	D3D12_CPU_DESCRIPTOR_HANDLE m_srvHandle;
+	Descriptor m_rtvDescriptor;
+	Descriptor m_srvDescriptor;
 
 	D3D12_RESOURCE_STATES m_currentStates;
-
-	bool m_initialized;
 };
 
 //---------------------------------------------------------------------------------------------------------------------
@@ -76,13 +84,27 @@ template class DF_API std::shared_ptr<DemoFramework::D3D12::RenderTarget>;
 
 inline DemoFramework::D3D12::RenderTarget::RenderTarget()
 	: m_resource()
-	, m_rtvHeap()
-	, m_srvHeap()
-	, m_rtvHandle({0})
-	, m_srvHandle({0})
+	, m_rtvAlloc()
+	, m_srvAlloc()
+	, m_rtvDescriptor(Descriptor::Invalid)
+	, m_srvDescriptor(Descriptor::Invalid)
 	, m_currentStates(D3D12_RESOURCE_STATE_COMMON)
-	, m_initialized(false)
 {
+}
+
+//---------------------------------------------------------------------------------------------------------------------
+
+inline DemoFramework::D3D12::RenderTarget::~RenderTarget()
+{
+	if(m_rtvAlloc)
+	{
+		m_rtvAlloc->Free(m_rtvDescriptor);
+	}
+
+	if(m_srvAlloc)
+	{
+		m_srvAlloc->Free(m_srvDescriptor);
+	}
 }
 
 //---------------------------------------------------------------------------------------------------------------------
@@ -94,16 +116,30 @@ inline const DemoFramework::D3D12::Resource::Ptr& DemoFramework::D3D12::RenderTa
 
 //---------------------------------------------------------------------------------------------------------------------
 
-inline const DemoFramework::D3D12::DescriptorHeap::Ptr& DemoFramework::D3D12::RenderTarget::GetRtvHeap() const
+inline const DemoFramework::D3D12::DescriptorAllocator::Ptr& DemoFramework::D3D12::RenderTarget::GetRtvAllocator() const
 {
-	return m_rtvHeap;
+	return m_rtvAlloc;
 }
 
 //---------------------------------------------------------------------------------------------------------------------
 
-inline const DemoFramework::D3D12::DescriptorHeap::Ptr& DemoFramework::D3D12::RenderTarget::GetSrvHeap() const
+inline const DemoFramework::D3D12::DescriptorAllocator::Ptr& DemoFramework::D3D12::RenderTarget::GetSrvAllocator() const
 {
-	return m_srvHeap;
+	return m_srvAlloc;
+}
+
+//---------------------------------------------------------------------------------------------------------------------
+
+inline const DemoFramework::D3D12::Descriptor& DemoFramework::D3D12::RenderTarget::GetRtvDescriptor() const
+{
+	return m_rtvDescriptor;
+}
+
+//---------------------------------------------------------------------------------------------------------------------
+
+inline const DemoFramework::D3D12::Descriptor& DemoFramework::D3D12::RenderTarget::GetSrvDescriptor() const
+{
+	return m_srvDescriptor;
 }
 
 //---------------------------------------------------------------------------------------------------------------------
