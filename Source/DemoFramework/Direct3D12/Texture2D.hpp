@@ -61,8 +61,7 @@ public:
 
 	static Ptr Load(
 		const Device::Ptr& device,
-		const CommandQueue::Ptr& cmdQueue,
-		const GraphicsCommandContext::Ptr& uploadCmdCtx,
+		const GraphicsCommandList::Ptr& uploadCmdList,
 		const DescriptorAllocator::Ptr& srvAlloc,
 		DataType dataType,
 		Channel channel,
@@ -75,18 +74,22 @@ public:
 
 	uint32_t GetWidth() const;
 	uint32_t GetHeight() const;
+	uint32_t GetMipCount() const;
 	DXGI_FORMAT GetFormat() const;
 
 
 private:
 
 	Resource::Ptr m_resource;
+	Resource::Ptr m_staging;
+
 	DescriptorAllocator::Ptr m_alloc;
 
 	Descriptor m_descriptor;
 
 	uint32_t m_width;
 	uint32_t m_height;
+	uint32_t m_mipCount;
 
 	DXGI_FORMAT m_format;
 };
@@ -99,10 +102,12 @@ template class DF_API std::shared_ptr<DemoFramework::D3D12::Texture2D>;
 
 inline DemoFramework::D3D12::Texture2D::Texture2D()
 	: m_resource()
+	, m_staging()
 	, m_alloc()
 	, m_descriptor()
 	, m_width(0)
 	, m_height(0)
+	, m_mipCount(0)
 	, m_format(DXGI_FORMAT_UNKNOWN)
 {
 }
@@ -143,6 +148,13 @@ inline uint32_t DemoFramework::D3D12::Texture2D::GetWidth() const
 inline uint32_t DemoFramework::D3D12::Texture2D::GetHeight() const
 {
 	return m_height;
+}
+
+//---------------------------------------------------------------------------------------------------------------------
+
+inline uint32_t DemoFramework::D3D12::Texture2D::GetMipCount() const
+{
+	return m_mipCount;
 }
 
 //---------------------------------------------------------------------------------------------------------------------

@@ -32,15 +32,14 @@
 
 DemoFramework::D3D12::Texture2D::Ptr DemoFramework::D3D12::Texture2D::Load(
 	const Device::Ptr& device,
-	const CommandQueue::Ptr& cmdQueue,
-	const GraphicsCommandContext::Ptr& uploadCmdCtx,
+	const GraphicsCommandList::Ptr& uploadCmdList,
 	const DescriptorAllocator::Ptr& srvAlloc,
 	const DataType dataType,
 	const Channel channel,
 	const char* const filePath,
 	const uint32_t mipCount)
 {
-	if(!device || !cmdQueue || !uploadCmdCtx || !srvAlloc || !filePath || filePath[0] == '\0' || mipCount == 0)
+	if(!device || !uploadCmdList || !srvAlloc || !filePath || filePath[0] == '\0' || mipCount == 0)
 	{
 		LOG_ERROR("Invalid parameter");
 		return Ptr();
@@ -309,8 +308,6 @@ DemoFramework::D3D12::Texture2D::Ptr DemoFramework::D3D12::Texture2D::Load(
 	destLoc.pResource = gpuTexture.Get();
 	destLoc.Type = D3D12_TEXTURE_COPY_TYPE_SUBRESOURCE_INDEX;
 
-	const GraphicsCommandList::Ptr& cmdList = uploadCmdCtx->GetCmdList();
-
 	void* pStagingData = nullptr;
 
 	// Map the staging texture.
@@ -364,7 +361,7 @@ DemoFramework::D3D12::Texture2D::Ptr DemoFramework::D3D12::Texture2D::Load(
 		}
 
 		// Copy the staging data to the GPU-resident texture.
-		cmdList->CopyTextureRegion(&destLoc, 0, 0, 0, &srcLoc, nullptr);
+		uploadCmdList->CopyTextureRegion(&destLoc, 0, 0, 0, &srcLoc, nullptr);
 	}
 
 	// Unmap the staging texture.
@@ -381,25 +378,7 @@ DemoFramework::D3D12::Texture2D::Ptr DemoFramework::D3D12::Texture2D::Load(
 	barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_COPY_DEST;
 	barrier.Transition.StateAfter = D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE;
 
-	cmdList->ResourceBarrier(1, &barrier);
-
-	// Create the staging command synchronization primitive so we can wait for
-	// all staging resource copies to complete at the end of initialization.
-	D3D12::Sync::Ptr cmdSync = D3D12::Sync::Create(device, D3D12_FENCE_FLAG_NONE);
-	if(!cmdSync)
-	{
-		return Ptr();
-	}
-
-	// Stop recording commands in the staging command list and begin executing it.
-	uploadCmdCtx->Submit(cmdQueue);
-
-	// Wait for the staging command list to finish executing.
-	cmdSync->Signal(cmdQueue);
-	cmdSync->Wait();
-
-	// Reset the command list so it can be used again.
-	uploadCmdCtx->Reset();
+	uploadCmdList->ResourceBarrier(1, &barrier);
 
 	const Descriptor descriptor = srvAlloc->Allocate();
 
@@ -418,10 +397,12 @@ DemoFramework::D3D12::Texture2D::Ptr DemoFramework::D3D12::Texture2D::Load(
 	Ptr output = std::make_shared<Texture2D>();
 
 	output->m_resource = gpuTexture;
+	output->m_staging = stagingTexture;
 	output->m_alloc = srvAlloc;
 	output->m_descriptor = descriptor;
 	output->m_width = width;
 	output->m_height = height;
+	output->m_mipCount = mipLevelCount;
 	output->m_format = format;
 
 	return output;
