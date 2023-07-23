@@ -22,7 +22,6 @@
 #include "LowLevel/Types.hpp"
 
 #include <memory>
-#include <set>
 
 //---------------------------------------------------------------------------------------------------------------------
 
@@ -37,6 +36,8 @@ namespace DemoFramework { namespace D3D12 {
 		D3D12_GPU_DESCRIPTOR_HANDLE gpuHandle;
 
 		uint32_t index;
+
+		bool temp;
 	};
 }}
 
@@ -59,7 +60,11 @@ public:
 	static Ptr Create(const Device::Ptr& device, const D3D12_DESCRIPTOR_HEAP_DESC& desc);
 
 	Descriptor Allocate();
+	Descriptor AllocateTemp();
+
+	void Free(const Descriptor& descriptor);
 	void Free(Descriptor& descriptor);
+	void FreeTempList();
 
 	const DescriptorHeap::Ptr& GetHeap() const;
 
@@ -69,10 +74,15 @@ public:
 
 private:
 
+	void _internalFree(uint32_t);
+
 	struct FreeList;
+	struct TempList;
 
 	DescriptorHeap::Ptr m_heap;
+
 	FreeList* m_pFreeList;
+	TempList* m_pTempList;
 
 	size_t m_incrSize;
 
@@ -92,12 +102,31 @@ template class DF_API std::shared_ptr<DemoFramework::D3D12::DescriptorAllocator>
 inline DemoFramework::D3D12::DescriptorAllocator::DescriptorAllocator()
 	: m_heap()
 	, m_pFreeList(nullptr)
+	, m_pTempList(nullptr)
 	, m_incrSize(0)
 	, m_totalLength(0)
 	, m_currentLength(0)
 	, m_lastIndex(0)
 	, m_tailIndex(0)
 {
+}
+
+//---------------------------------------------------------------------------------------------------------------------
+
+inline void DemoFramework::D3D12::DescriptorAllocator::Free(const Descriptor& descriptor)
+{
+	assert(!descriptor.temp);
+	_internalFree(descriptor.index);
+}
+
+//---------------------------------------------------------------------------------------------------------------------
+
+inline void DemoFramework::D3D12::DescriptorAllocator::Free(Descriptor& descriptor)
+{
+	assert(!descriptor.temp);
+	_internalFree(descriptor.index);
+
+	descriptor = Descriptor::Invalid;
 }
 
 //---------------------------------------------------------------------------------------------------------------------

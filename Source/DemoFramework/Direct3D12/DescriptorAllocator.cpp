@@ -22,6 +22,9 @@
 
 #include "../Application/Log.hpp"
 
+#include <set>
+#include <unordered_set>
+
 //---------------------------------------------------------------------------------------------------------------------
 
 const DemoFramework::D3D12::Descriptor DemoFramework::D3D12::Descriptor::Invalid =
@@ -29,14 +32,19 @@ const DemoFramework::D3D12::Descriptor DemoFramework::D3D12::Descriptor::Invalid
 	{0},      // D3D12_CPU_DESCRIPTOR_HANDLE cpuHandle
 	{0},      // D3D12_GPU_DESCRIPTOR_HANDLE gpuHandle
 	UINT_MAX, // uint32_t id
+	false,    // bool temp
 };
 
 //---------------------------------------------------------------------------------------------------------------------
 
-// Defining the free list using PIMPL to make MSVC shut up about std::set<> needing a DLL interface.
+// Defining the free & temp lists using PIMPL to make MSVC shut up about std::set<> and std::unordered_set<> needing a DLL interfaces.
 struct DemoFramework::D3D12::DescriptorAllocator::FreeList
 {
 	std::set<uint32_t> list;
+};
+struct DemoFramework::D3D12::DescriptorAllocator::TempList
+{
+	std::unordered_set<uint32_t> list;
 };
 
 //---------------------------------------------------------------------------------------------------------------------
@@ -46,6 +54,11 @@ DemoFramework::D3D12::DescriptorAllocator::~DescriptorAllocator()
 	if(m_pFreeList)
 	{
 		delete m_pFreeList;
+	}
+
+	if(m_pTempList)
+	{
+		delete m_pTempList;
 	}
 }
 
@@ -71,6 +84,7 @@ DemoFramework::D3D12::DescriptorAllocator::Ptr DemoFramework::D3D12::DescriptorA
 	}
 
 	output->m_pFreeList = new FreeList();
+	output->m_pTempList = new TempList();
 	output->m_incrSize = device->GetDescriptorHandleIncrementSize(desc.Type);
 	output->m_totalLength = desc.NumDescriptors;
 	output->m_lastIndex = desc.NumDescriptors - 1;
@@ -121,6 +135,7 @@ DemoFramework::D3D12::Descriptor DemoFramework::D3D12::DescriptorAllocator::Allo
 		output.cpuHandle.ptr = cpuHandleStart + offset;
 		output.gpuHandle.ptr = gpuHandleStart + offset;
 		output.index = index;
+		output.temp = false;
 
 		++m_currentLength;
 	}
@@ -130,27 +145,54 @@ DemoFramework::D3D12::Descriptor DemoFramework::D3D12::DescriptorAllocator::Allo
 
 //---------------------------------------------------------------------------------------------------------------------
 
-void DemoFramework::D3D12::DescriptorAllocator::Free(Descriptor& descriptor)
+DemoFramework::D3D12::Descriptor DemoFramework::D3D12::DescriptorAllocator::AllocateTemp()
+{
+	Descriptor output = Allocate();
+
+	// Track the allocated descriptor in the temp list.
+	m_pTempList->list.insert(output.index);
+
+	// Mark the descriptor so we know it's a temp descriptor if user code attempts to free it manually.
+	output.temp = true;
+
+	return output;
+}
+
+//---------------------------------------------------------------------------------------------------------------------
+
+void DemoFramework::D3D12::DescriptorAllocator::_internalFree(const uint32_t index)
 {
 	// Make sure the descriptor index is within the bounds of the heap.
-	if(descriptor.index < m_totalLength)
+	if(index < m_totalLength)
 	{
-		if(descriptor.index == m_tailIndex)
+		if(index == m_tailIndex)
 		{
 			// The descriptor being freed is at the end of the list, so we don't need to deal with the free list.
 			--m_currentLength;
 			--m_tailIndex;
 		}
-		else if(descriptor.index < m_currentLength && !m_pFreeList->list.count(descriptor.index))
+		else if(index < m_currentLength && !m_pFreeList->list.count(index))
 		{
 			// Insert the descriptor index into the free list when it's not already there.
-			m_pFreeList->list.insert(descriptor.index);
+			m_pFreeList->list.insert(index);
 
 			--m_currentLength;
 		}
-
-		descriptor = Descriptor::Invalid;
 	}
+}
+
+//---------------------------------------------------------------------------------------------------------------------
+
+void DemoFramework::D3D12::DescriptorAllocator::FreeTempList()
+{
+	// Free each descriptor index in the temp list.
+	for(const uint32_t index : m_pTempList->list)
+	{
+		_internalFree(index);
+	}
+
+	// Clear the temp list.
+	m_pTempList->list.clear();
 }
 
 //---------------------------------------------------------------------------------------------------------------------
