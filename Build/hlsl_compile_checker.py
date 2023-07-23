@@ -37,7 +37,7 @@ class HlslCompileChecker(CompileChecker):
 
 	def GetDependencies(self, buildProject, inputFile):
 		with perf_timer.PerfTimer("HLSL header dependency resolution"):
-			log.Info("Checking HLSL header dependencies for {}", inputFile)
+			log.Info("Checking header dependencies for {}", inputFile)
 
 			cache = shared_globals.settings.Get("hlslHeaderCache", {})
 			mtime = os.path.getmtime(inputFile)

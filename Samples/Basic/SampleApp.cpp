@@ -641,7 +641,7 @@ bool SampleApp::prv_createQuadGeometry()
 {
 	using namespace DemoFramework;
 
-	const D3D12::Device::Ptr& pDevice = m_renderBase->GetDevice();
+	const D3D12::Device::Ptr& device = m_renderBase->GetDevice();
 
 	// Construct the geometry for a quad
 	const Vertex triangleVertices[] =
@@ -671,7 +671,7 @@ bool SampleApp::prv_createQuadGeometry()
 
 	// Create the vertex buffer.
 	m_quadVertexBuffer = D3D12::CreateCommittedResource(
-		pDevice,
+		device,
 		vertexBufferDesc,
 		defaultHeapProps,
 		D3D12_HEAP_FLAG_NONE,
@@ -683,7 +683,7 @@ bool SampleApp::prv_createQuadGeometry()
 
 	// Create the staging vertex buffer.
 	D3D12::Resource::Ptr stagingVertexBuffer = D3D12::CreateCommittedResource(
-		pDevice,
+		device,
 		vertexBufferDesc,
 		uploadHeapProps,
 		D3D12_HEAP_FLAG_NONE,
@@ -723,7 +723,7 @@ bool SampleApp::prv_createQuadGeometry()
 
 	// Create the index buffer.
 	m_quadIndexBuffer = D3D12::CreateCommittedResource(
-		pDevice,
+		device,
 		indexBufferDesc,
 		defaultHeapProps,
 		D3D12_HEAP_FLAG_NONE,
@@ -735,7 +735,7 @@ bool SampleApp::prv_createQuadGeometry()
 
 	// Create the staging index buffer.
 	D3D12::Resource::Ptr stagingIndexBuffer = D3D12::CreateCommittedResource(
-		pDevice,
+		device,
 		indexBufferDesc,
 		uploadHeapProps,
 		D3D12_HEAP_FLAG_NONE,
@@ -783,7 +783,7 @@ bool SampleApp::prv_createQuadGeometry()
 
 	// Create the staging command synchronization primitive so we can wait for
 	// all staging resource copies to complete at the end of initialization.
-	D3D12::Sync::Ptr stagingCmdSync = D3D12::Sync::Create(pDevice, D3D12_FENCE_FLAG_NONE);
+	D3D12::Sync::Ptr stagingCmdSync = D3D12::Sync::Create(device, D3D12_FENCE_FLAG_NONE);
 	if(!stagingCmdSync)
 	{
 		return false;

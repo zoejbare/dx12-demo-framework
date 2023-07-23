@@ -38,7 +38,6 @@ DemoFramework::D3D12::Blob::Ptr DemoFramework::D3D12::LoadShaderFromFile(const c
 	FILE* const pFile = fopen(filePath, "rb");
 	if(!pFile)
 	{
-		LOG_ERROR("Failed to open file: %s", filePath);
 		return nullptr;
 	}
 
