@@ -24,6 +24,7 @@
 #include "LowLevel/Resource.hpp"
 
 #include "../Application/Log.hpp"
+#include "../Utility/Math.hpp"
 
 #include <DirectXTex.h>
 #include <stb_image.h>
@@ -39,6 +40,8 @@ DemoFramework::D3D12::Texture2D::Ptr DemoFramework::D3D12::Texture2D::Load(
 	const char* const filePath,
 	const uint32_t mipCount)
 {
+	using namespace DemoFramework::Utility;
+
 	if(!device || !uploadCmdList || !srvAlloc || !filePath || filePath[0] == '\0' || mipCount == 0)
 	{
 		LOG_ERROR("Invalid parameter");
@@ -161,19 +164,48 @@ DemoFramework::D3D12::Texture2D::Ptr DemoFramework::D3D12::Texture2D::Load(
 	baseImage.slicePitch = baseImage.height * baseImage.rowPitch;
 	baseImage.pixels = reinterpret_cast<uint8_t*>(pImgData);
 
+	const uint32_t desiredWidth = Math::GetPowerOfTwo(width);
+	const uint32_t desiredHeight = Math::GetPowerOfTwo(height);
+
+	DirectX::ScratchImage resizedImage;
+
+	// Textures need to be power-of-2, so resize the image if necessary.
+	if(width != desiredWidth || height != desiredHeight)
+	{
+		const HRESULT resizeImageResult = DirectX::Resize(baseImage, desiredWidth, desiredHeight, DirectX::TEX_FILTER_CUBIC, resizedImage);
+		if(FAILED(resizeImageResult))
+		{
+			LOG_ERROR("Failed to resize Texture2D base image: result=0x%08" PRIX32, resizeImageResult);
+			return Ptr();
+		}
+
+		// Overwrite the image properties with the resized copy.
+		baseImage = *resizedImage.GetImage(0, 0, 0);
+	}
+
 	DirectX::ScratchImage mipChain;
 
 	if(mipLevelCount > 1)
 	{
-		DirectX::GenerateMipMaps(baseImage, DirectX::TEX_FILTER_BOX, size_t(mipLevelCount), mipChain);
+		// Generate the mip chain up to the selected number of mip levels.
+		const HRESULT generateMipsResult = DirectX::GenerateMipMaps(baseImage, DirectX::TEX_FILTER_BOX, size_t(mipLevelCount), mipChain);
+		if(FAILED(generateMipsResult))
+		{
+			LOG_ERROR("Failed to generate Texture2D mipmaps: result=0x%08" PRIX32, generateMipsResult);
+			return Ptr();
+		}
 	}
 	else
 	{
+		// There is only a single mip level, so we can initialize the mip chain from just the base image.
 		mipChain.InitializeFromImage(baseImage);
 	}
 
 	// Free the original image data now that we no longer need it.
 	stbi_image_free(pImgData);
+
+	// If there is a resized image, we can release its held resources now.
+	resizedImage.Release();
 
 	auto calculateStagingDataSize = [
 		&width,
