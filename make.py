@@ -139,45 +139,83 @@ def onGlobalPostBuild(projects):
 
 ###################################################################################################
 
-class ExtLibDirectTex(object):
+class ExtLibDirectXMath(object):
+	projectName = "Ext_DirectXMath"
+	outputName = "libdirectxmath"
+	path = "External/DirectXMath"
+	projectType = csbuild.ProjectType.StaticLibrary
+
+with csbuild.Project(ExtLibDirectXMath.projectName, ExtLibDirectXMath.path, autoDiscoverSourceFiles=False):
+	csbuild.SetOutput(ExtLibDirectXMath.outputName, csbuild.ProjectType.StaticLibrary)
+
+	if csbuild.GetRunMode() == csbuild.RunMode.GenerateSolution:
+		csbuild.AddSourceFiles(
+			f"{ExtLibDirectXMath.path}/**/*.cpp",
+			f"{ExtLibDirectXMath.path}/**/*.h",
+			f"{ExtLibDirectXMath.path}/**/*.inl",
+		)
+
+	else:
+		csbuild.AddSourceDirectories(
+			f"{ExtLibDirectXMath.path}/Extensions",
+			f"{ExtLibDirectXMath.path}/Inc",
+			f"{ExtLibDirectXMath.path}/MatrixStack",
+			f"{ExtLibDirectXMath.path}/SHMath",
+			f"{ExtLibDirectXMath.path}/Stereo3D",
+			f"{ExtLibDirectXMath.path}/XDSP",
+		)
+
+	with csbuild.Scope(csbuild.ScopeDef.All):
+		csbuild.AddIncludeDirectories(
+			f"{ExtLibDirectXMath.path}/Extensions",
+			f"{ExtLibDirectXMath.path}/Inc",
+			f"{ExtLibDirectXMath.path}/MatrixStack",
+			f"{ExtLibDirectXMath.path}/SHMath",
+			f"{ExtLibDirectXMath.path}/Stereo3D",
+			f"{ExtLibDirectXMath.path}/XDSP",
+		)
+
+###################################################################################################
+
+class ExtLibDirectXTex(object):
 	projectName = "Ext_DirectXTex"
 	outputName = "libdirectxtex"
 	path = "External/DirectXTex/DirectXTex"
 	projectType = csbuild.ProjectType.StaticLibrary
 
-with csbuild.Project(ExtLibDirectTex.projectName, ExtLibDirectTex.path, autoDiscoverSourceFiles=False):
-	csbuild.SetOutput(ExtLibDirectTex.outputName, csbuild.ProjectType.StaticLibrary)
+with csbuild.Project(ExtLibDirectXTex.projectName, ExtLibDirectXTex.path, autoDiscoverSourceFiles=False):
+	csbuild.SetOutput(ExtLibDirectXTex.outputName, csbuild.ProjectType.StaticLibrary)
 
 	if csbuild.GetRunMode() == csbuild.RunMode.GenerateSolution:
 		csbuild.AddSourceFiles(
-			f"{ExtLibDirectTex.path}/*.cpp",
-			f"{ExtLibDirectTex.path}/*.h"
+			f"{ExtLibDirectXTex.path}/*.cpp",
+			f"{ExtLibDirectXTex.path}/*.h"
 		)
 
 	else:
 		csbuild.AddSourceFiles(
-			f"{ExtLibDirectTex.path}/BC.cpp",
-			f"{ExtLibDirectTex.path}/BC4BC5.cpp",
-			f"{ExtLibDirectTex.path}/BC6HBC7.cpp",
-			f"{ExtLibDirectTex.path}/DirectXTexCompress.cpp",
-			f"{ExtLibDirectTex.path}/DirectXTexConvert.cpp",
-			f"{ExtLibDirectTex.path}/DirectXTexD3D12.cpp",
-			f"{ExtLibDirectTex.path}/DirectXTexDDS.cpp",
-			f"{ExtLibDirectTex.path}/DirectXTexFlipRotate.cpp",
-			f"{ExtLibDirectTex.path}/DirectXTexHDR.cpp",
-			f"{ExtLibDirectTex.path}/DirectXTexImage.cpp",
-			f"{ExtLibDirectTex.path}/DirectXTexMipmaps.cpp",
-			f"{ExtLibDirectTex.path}/DirectXTexMisc.cpp",
-			f"{ExtLibDirectTex.path}/DirectXTexNormalMaps.cpp",
-			f"{ExtLibDirectTex.path}/DirectXTexPMAlpha.cpp",
-			f"{ExtLibDirectTex.path}/DirectXTexResize.cpp",
-			f"{ExtLibDirectTex.path}/DirectXTexTGA.cpp",
-			f"{ExtLibDirectTex.path}/DirectXTexUtil.cpp",
-			f"{ExtLibDirectTex.path}/DirectXTexWIC.cpp",
+			f"{ExtLibDirectXTex.path}/BC.cpp",
+			f"{ExtLibDirectXTex.path}/BC4BC5.cpp",
+			f"{ExtLibDirectXTex.path}/BC6HBC7.cpp",
+			f"{ExtLibDirectXTex.path}/DirectXTexCompress.cpp",
+			f"{ExtLibDirectXTex.path}/DirectXTexConvert.cpp",
+			f"{ExtLibDirectXTex.path}/DirectXTexD3D12.cpp",
+			f"{ExtLibDirectXTex.path}/DirectXTexDDS.cpp",
+			f"{ExtLibDirectXTex.path}/DirectXTexFlipRotate.cpp",
+			f"{ExtLibDirectXTex.path}/DirectXTexHDR.cpp",
+			f"{ExtLibDirectXTex.path}/DirectXTexImage.cpp",
+			f"{ExtLibDirectXTex.path}/DirectXTexMipmaps.cpp",
+			f"{ExtLibDirectXTex.path}/DirectXTexMisc.cpp",
+			f"{ExtLibDirectXTex.path}/DirectXTexNormalMaps.cpp",
+			f"{ExtLibDirectXTex.path}/DirectXTexPMAlpha.cpp",
+			f"{ExtLibDirectXTex.path}/DirectXTexResize.cpp",
+			f"{ExtLibDirectXTex.path}/DirectXTexTGA.cpp",
+			f"{ExtLibDirectXTex.path}/DirectXTexUtil.cpp",
+			f"{ExtLibDirectXTex.path}/DirectXTexWIC.cpp",
 		)
 
 	with csbuild.Scope(csbuild.ScopeDef.All):
-		csbuild.AddIncludeDirectories(ExtLibDirectTex.path)
+		csbuild.AddIncludeDirectories(ExtLibDirectXTex.path)
 
 ###################################################################################################
 
@@ -294,7 +332,8 @@ class LibDemoFramework(object):
 	outputName = "libdf"
 	sourcePath = f"{_REPO_ROOT_PATH}/Source"
 	dependencies = [
-		ExtLibDirectTex.projectName,
+		ExtLibDirectXMath.projectName,
+		ExtLibDirectXTex.projectName,
 		ExtLibImgui.projectName,
 		ExtLibImplot.projectName,
 		ExtLibStb.projectName,
