@@ -15,17 +15,32 @@
 // CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
 // IN THE SOFTWARE.
 //
-#pragma once
+
+#include "common.hlsli"
 
 //---------------------------------------------------------------------------------------------------------------------
 
-#include "Types.hpp"
+ConstantBuffer<EquiToCubeRootConstant> rootConst : register(b0, space0);
+
+Texture2D equirectMap : register(t0, space0);
+SamplerState mapSampler : register(s0, space0);
+
+RWTexture2D<float4> envFaceMap : register(u0, space0);
 
 //---------------------------------------------------------------------------------------------------------------------
 
-namespace DemoFramework { namespace D3D12 {
-	DF_API PipelineState::Ptr CreatePipelineState(const Device::Ptr& device, const D3D12_GRAPHICS_PIPELINE_STATE_DESC& desc);
-	DF_API PipelineState::Ptr CreatePipelineState(const Device::Ptr& device, const D3D12_COMPUTE_PIPELINE_STATE_DESC& desc);
-}}
+[numthreads(DF_REFL_THREAD_COUNT_X, DF_REFL_THREAD_COUNT_Y, 1)]
+void ComputeMain(uint2 threadId : SV_DispatchThreadID)
+{
+	if(threadId.x >= rootConst.edgeLength || threadId.y >= rootConst.edgeLength)
+	{
+		return;
+	}
+
+	const float3 normal = CalculateNormalFromPixelCoord(threadId, rootConst.faceIndex, rootConst.invEdgeLength);
+	const float2 texCoord = CalculateEquirectUvFromNormal(normal);
+
+	envFaceMap[threadId] = equirectMap.SampleLevel(mapSampler, texCoord, rootConst.mipIndex);
+}
 
 //---------------------------------------------------------------------------------------------------------------------

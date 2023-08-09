@@ -304,6 +304,7 @@ class LibDemoFramework(object):
 with csbuild.Project(LibDemoFramework.projectName, LibDemoFramework.sourcePath, LibDemoFramework.dependencies):
 	csbuild.SetOutput(LibDemoFramework.outputName, csbuild.ProjectType.SharedLibrary)
 	csbuild.SetSupportedPlatforms("Windows")
+	csbuild.SetHlslContext("framework")
 
 	csbuild.AddDefines("DF_DLL_EXPORT")
 

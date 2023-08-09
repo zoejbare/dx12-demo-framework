@@ -15,17 +15,27 @@
 // CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
 // IN THE SOFTWARE.
 //
-#pragma once
+
+#include "common.hlsli"
 
 //---------------------------------------------------------------------------------------------------------------------
 
-#include "Types.hpp"
+ConstantBuffer<ClearRootConstant> uniformData : register(b0, space0);
+
+RWTexture2D<float4> cubeFaceMap : register(u0, space0);
 
 //---------------------------------------------------------------------------------------------------------------------
 
-namespace DemoFramework { namespace D3D12 {
-	DF_API PipelineState::Ptr CreatePipelineState(const Device::Ptr& device, const D3D12_GRAPHICS_PIPELINE_STATE_DESC& desc);
-	DF_API PipelineState::Ptr CreatePipelineState(const Device::Ptr& device, const D3D12_COMPUTE_PIPELINE_STATE_DESC& desc);
-}}
+[numthreads(DF_REFL_THREAD_COUNT_X, DF_REFL_THREAD_COUNT_Y, 1)]
+void ComputeMain(uint2 threadId : SV_DispatchThreadID)
+{
+	if(threadId.x >= uniformData.edgeLength || threadId.y >= uniformData.edgeLength)
+	{
+		return;
+	}
+
+	// Clear the cube face texel.
+	cubeFaceMap[threadId] = (float4)0.0f;
+}
 
 //---------------------------------------------------------------------------------------------------------------------

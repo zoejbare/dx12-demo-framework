@@ -15,17 +15,37 @@
 // CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
 // IN THE SOFTWARE.
 //
-#pragma once
+
+#include "common.hlsli"
 
 //---------------------------------------------------------------------------------------------------------------------
 
-#include "Types.hpp"
+ConstantBuffer<ShNormalizeRootConstant> rootConst : register(b0, space0);
+StructuredBuffer<float> shWeights : register(t0, space0);
+
+RWStructuredBuffer<ShColorCoefficients> shCoefficients : register(u0, space0);
 
 //---------------------------------------------------------------------------------------------------------------------
 
-namespace DemoFramework { namespace D3D12 {
-	DF_API PipelineState::Ptr CreatePipelineState(const Device::Ptr& device, const D3D12_GRAPHICS_PIPELINE_STATE_DESC& desc);
-	DF_API PipelineState::Ptr CreatePipelineState(const Device::Ptr& device, const D3D12_COMPUTE_PIPELINE_STATE_DESC& desc);
-}}
+[numthreads(1, 1, 1)]
+void ComputeMain(uint threadId : SV_DispatchThreadID)
+{
+	ShColorCoefficients finalCoeff = shCoefficients[rootConst.index];
+
+	const float normalizationFactor = M_4_PI / shWeights[rootConst.index];
+
+	// Normalize the final coefficient sums.
+	finalCoeff.value[0] *= normalizationFactor;
+	finalCoeff.value[1] *= normalizationFactor;
+	finalCoeff.value[2] *= normalizationFactor;
+	finalCoeff.value[3] *= normalizationFactor;
+	finalCoeff.value[4] *= normalizationFactor;
+	finalCoeff.value[5] *= normalizationFactor;
+	finalCoeff.value[6] *= normalizationFactor;
+	finalCoeff.value[7] *= normalizationFactor;
+	finalCoeff.value[8] *= normalizationFactor;
+
+	shCoefficients[rootConst.index] = finalCoeff;
+}
 
 //---------------------------------------------------------------------------------------------------------------------

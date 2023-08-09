@@ -45,3 +45,27 @@ DemoFramework::D3D12::PipelineState::Ptr DemoFramework::D3D12::CreatePipelineSta
 }
 
 //---------------------------------------------------------------------------------------------------------------------
+
+DemoFramework::D3D12::PipelineState::Ptr DemoFramework::D3D12::CreatePipelineState(
+	const Device::Ptr& device,
+	const D3D12_COMPUTE_PIPELINE_STATE_DESC& desc)
+{
+	if(!device)
+	{
+		LOG_ERROR("Invalid parameter");
+		return nullptr;
+	}
+
+	D3D12::PipelineState::Ptr output;
+
+	const HRESULT result = device->CreateComputePipelineState(&desc, IID_PPV_ARGS(&output));
+	if(result != S_OK)
+	{
+		LOG_ERROR("Failed to create compute pipeline state; result='0x%08" PRIX32 "'", result);
+		return nullptr;
+	}
+
+	return output;
+}
+
+//---------------------------------------------------------------------------------------------------------------------
