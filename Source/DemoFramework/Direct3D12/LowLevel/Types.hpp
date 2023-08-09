@@ -49,6 +49,8 @@ ID3DEvent
 	: public IUnknown
 {
 	virtual HANDLE GetHandle() const = 0;
+
+	virtual BOOL Wait(DWORD timeoutInMs = INFINITE) = 0;
 };
 
 //---------------------------------------------------------------------------------------------------------------------

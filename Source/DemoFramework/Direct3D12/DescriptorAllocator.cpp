@@ -31,7 +31,7 @@ const DemoFramework::D3D12::Descriptor DemoFramework::D3D12::Descriptor::Invalid
 {
 	{0},      // D3D12_CPU_DESCRIPTOR_HANDLE cpuHandle
 	{0},      // D3D12_GPU_DESCRIPTOR_HANDLE gpuHandle
-	UINT_MAX, // uint32_t id
+	UINT_MAX, // uint32_t index
 	false,    // bool temp
 };
 

@@ -33,8 +33,9 @@ struct D3DEventImpl
 	virtual ULONG STDMETHODCALLTYPE AddRef() override;
 	virtual ULONG STDMETHODCALLTYPE Release() override;
 
-
 	virtual HANDLE GetHandle() const override;
+
+	virtual BOOL Wait(DWORD timeoutInMs) override;
 
 	HANDLE m_handle;
 	ULONG m_ref;
@@ -110,6 +111,15 @@ ULONG D3DEventImpl::Release()
 HANDLE D3DEventImpl::GetHandle() const
 {
 	return m_handle;
+}
+
+//---------------------------------------------------------------------------------------------------------------------
+
+BOOL D3DEventImpl::Wait(const DWORD timeoutInMs)
+{
+	return m_handle
+		? (::WaitForSingleObject(m_handle, timeoutInMs) == WAIT_OBJECT_0)
+		: true;
 }
 
 //---------------------------------------------------------------------------------------------------------------------
