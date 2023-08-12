@@ -41,6 +41,9 @@ public:
 
 	template <typename T>
 	static T GetPowerOfTwo(T value);
+
+	template <typename T>
+	static T GetAlignedSize(T value, T alignment);
 };
 
 //---------------------------------------------------------------------------------------------------------------------
@@ -215,6 +218,80 @@ inline uint64_t DemoFramework::Utility::Math::GetPowerOfTwo(const uint64_t value
 	}
 
 	return 0;
+}
+
+//---------------------------------------------------------------------------------------------------------------------
+
+template <typename T>
+inline T DemoFramework::Utility::Math::GetAlignedSize(T value, T alignment)
+{
+	// Unsupported type
+	assert(false);
+	return T();
+}
+
+//---------------------------------------------------------------------------------------------------------------------
+
+template <>
+inline int8_t DemoFramework::Utility::Math::GetAlignedSize(const int8_t value, const int8_t alignment)
+{
+	return ((value) + (alignment - 1)) & ~(alignment - 1);
+}
+
+//---------------------------------------------------------------------------------------------------------------------
+
+template <>
+inline int16_t DemoFramework::Utility::Math::GetAlignedSize(const int16_t value, const int16_t alignment)
+{
+	return ((value) + (alignment - 1)) & ~(alignment - 1);
+}
+
+//---------------------------------------------------------------------------------------------------------------------
+
+template <>
+inline int32_t DemoFramework::Utility::Math::GetAlignedSize(const int32_t value, const int32_t alignment)
+{
+	return ((value) + (alignment - 1)) & ~(alignment - 1);
+}
+
+//---------------------------------------------------------------------------------------------------------------------
+
+template <>
+inline int64_t DemoFramework::Utility::Math::GetAlignedSize(const int64_t value, const int64_t alignment)
+{
+	return ((value) + (alignment - 1)) & ~(alignment - 1);
+}
+
+//---------------------------------------------------------------------------------------------------------------------
+
+template <>
+inline uint8_t DemoFramework::Utility::Math::GetAlignedSize(const uint8_t value, const uint8_t alignment)
+{
+	return ((value) + (alignment - 1)) & ~(alignment - 1);
+}
+
+//---------------------------------------------------------------------------------------------------------------------
+
+template <>
+inline uint16_t DemoFramework::Utility::Math::GetAlignedSize(const uint16_t value, const uint16_t alignment)
+{
+	return ((value) + (alignment - 1)) & ~(alignment - 1);
+}
+
+//---------------------------------------------------------------------------------------------------------------------
+
+template <>
+inline uint32_t DemoFramework::Utility::Math::GetAlignedSize(const uint32_t value, const uint32_t alignment)
+{
+	return ((value) + (alignment - 1)) & ~(alignment - 1);
+}
+
+//---------------------------------------------------------------------------------------------------------------------
+
+template <>
+inline uint64_t DemoFramework::Utility::Math::GetAlignedSize(const uint64_t value, const uint64_t alignment)
+{
+	return ((value) + (alignment - 1)) & ~(alignment - 1);
 }
 
 //---------------------------------------------------------------------------------------------------------------------
