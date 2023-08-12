@@ -129,11 +129,11 @@ DemoFramework::D3D12::Descriptor DemoFramework::D3D12::DescriptorAllocator::Allo
 	if(index != Descriptor::Invalid.index)
 	{
 		const size_t cpuHandleStart = m_heap->GetCPUDescriptorHandleForHeapStart().ptr;
-		const size_t gpuHandleStart = m_heap->GetGPUDescriptorHandleForHeapStart().ptr;
+		const uint64_t gpuHandleStart = m_heap->GetGPUDescriptorHandleForHeapStart().ptr;
 		const size_t offset = m_incrSize * size_t(index);
 
 		output.cpuHandle.ptr = cpuHandleStart + offset;
-		output.gpuHandle.ptr = gpuHandleStart + offset;
+		output.gpuHandle.ptr = gpuHandleStart + uint64_t(offset);
 		output.index = index;
 		output.temp = false;
 
