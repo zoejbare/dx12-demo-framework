@@ -21,6 +21,8 @@ from __future__ import unicode_literals, division, print_function
 
 import csbuild
 import os
+import shutil
+import stat
 import sys
 
 from csbuild.tools.project_generators import visual_studio
@@ -136,6 +138,24 @@ def onGlobalPostBuild(projects):
 		for project in projects:
 			if _POST_BUILD_HOOK in project.userData:
 				project.userData.onBuildFinishedHook(project)
+
+def copyAssetFile(inputFilePath, outputRootPath):
+	inputFilePath = os.path.normpath(inputFilePath)
+	outputRootPath = os.path.normpath(outputRootPath)
+
+	if not os.access(outputRootPath, os.F_OK):
+		os.makedirs(outputRootPath)
+
+	outputFilePath = os.path.join(outputRootPath, os.path.basename(inputFilePath))
+	if os.access(outputFilePath, os.F_OK):
+		inputFileStat = os.stat(inputFilePath)
+		outputFileStat = os.stat(outputFilePath)
+
+		if inputFileStat.st_mtime <= outputFileStat.st_mtime:
+			return
+
+	csbuild.log.Build(f"Copying file to output: {inputFilePath}")
+	shutil.copy(inputFilePath, outputFilePath)
 
 ###################################################################################################
 
@@ -365,10 +385,12 @@ class Samples(object):
 
 ###################################################################################################
 
-class SampleBasic(object):
-	projectName = "Sample-Basic"
-	outputName = "basic-sample"
-	path = f"{Samples.rootPath}/Basic"
+class LibSampleCommon(object):
+	projectName = "LibSampleCommon"
+	outputName = "libdx12samplecommon"
+	path = f"{Samples.rootPath}/Common"
+	modelAssetPath = f"{path}/Models"
+	textureAssetPath = f"{path}/Textures"
 	dependencies = [
 		ExtLibImgui.projectName,
 		ExtLibImplot.projectName,
@@ -376,12 +398,47 @@ class SampleBasic(object):
 		LibDemoFramework.projectName,
 	]
 
-with csbuild.Project(SampleBasic.projectName, Samples.rootPath, SampleBasic.dependencies, autoDiscoverSourceFiles=False):
+	@staticmethod
+	def onPostBuild(project):
+		subDirName = "common"
+
+		modelOutputRootPath = f"{project.outputDir}/models/{subDirName}"
+		textureOutputRootPath = f"{project.outputDir}/textures/{subDirName}"
+
+		# Copy the model files.
+		copyAssetFile(f"{LibSampleCommon.modelAssetPath}/head.obj", modelOutputRootPath)
+
+		# Copy the texture files.
+		copyAssetFile(f"{LibSampleCommon.textureAssetPath}/pine_attic_2k.hdr", textureOutputRootPath)
+
+with csbuild.Project(LibSampleCommon.projectName, LibSampleCommon.path, LibSampleCommon.dependencies, autoDiscoverSourceFiles=False):
+	csbuild.SetOutput(LibSampleCommon.outputName, csbuild.ProjectType.StaticLibrary)
+	csbuild.SetUserData(_POST_BUILD_HOOK, LibSampleCommon.onPostBuild)
+	csbuild.SetHlslContext("common")
+
+	csbuild.AddExcludeDirectories(
+		LibSampleCommon.modelAssetPath,
+		LibSampleCommon.textureAssetPath,
+	)
+	csbuild.AddSourceDirectories(
+		LibSampleCommon.path,
+	)
+
+###################################################################################################
+
+class SampleBasic(object):
+	projectName = "Sample-Basic"
+	outputName = "basic-sample"
+	path = f"{Samples.rootPath}/Basic"
+	dependencies = [
+		LibSampleCommon.projectName,
+	]
+
+with csbuild.Project(SampleBasic.projectName, SampleBasic.path, SampleBasic.dependencies, autoDiscoverSourceFiles=False):
 	csbuild.SetOutput(SampleBasic.outputName, csbuild.ProjectType.Application)
 	csbuild.SetHlslContext("basic")
 
 	csbuild.AddSourceDirectories(
-		Samples.commonPath,
 		SampleBasic.path,
 	)
 
@@ -392,19 +449,33 @@ class SampleDeferred(object):
 	outputName = "deferred-sample"
 	path = f"{Samples.rootPath}/Deferred"
 	dependencies = [
-		ExtLibImgui.projectName,
-		ExtLibImplot.projectName,
-
-		LibDemoFramework.projectName,
+		LibSampleCommon.projectName,
 	]
 
-with csbuild.Project(SampleDeferred.projectName, Samples.rootPath, SampleDeferred.dependencies, autoDiscoverSourceFiles=False):
+with csbuild.Project(SampleDeferred.projectName, SampleDeferred.path, SampleDeferred.dependencies, autoDiscoverSourceFiles=False):
 	csbuild.SetOutput(SampleDeferred.outputName, csbuild.ProjectType.Application)
 	csbuild.SetHlslContext("deferred")
 
 	csbuild.AddSourceDirectories(
-		Samples.commonPath,
 		SampleDeferred.path,
+	)
+
+###################################################################################################
+
+class SampleEnvDiffuse(object):
+	projectName = "Sample-EnvDiffuse"
+	outputName = "env-diffuse-sample"
+	path = f"{Samples.rootPath}/EnvDiffuse"
+	dependencies = [
+		LibSampleCommon.projectName,
+	]
+
+with csbuild.Project(SampleEnvDiffuse.projectName, SampleEnvDiffuse.path, SampleEnvDiffuse.dependencies, autoDiscoverSourceFiles=False):
+	csbuild.SetOutput(SampleEnvDiffuse.outputName, csbuild.ProjectType.Application)
+	csbuild.SetHlslContext("env-diffuse")
+
+	csbuild.AddSourceDirectories(
+		SampleEnvDiffuse.path,
 	)
 
 ###################################################################################################
