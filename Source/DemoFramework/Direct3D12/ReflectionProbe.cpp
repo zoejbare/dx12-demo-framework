@@ -81,17 +81,17 @@ DemoFramework::D3D12::ReflectionProbe::Ptr DemoFramework::D3D12::ReflectionProbe
 	{
 		case EnvMapQuality::Low:
 			envMapEdgeLength = 512;
-			irrMapEdgeLength = 32;
+			irrMapEdgeLength = 16;
 			break;
 
 		case EnvMapQuality::Mid:
 			envMapEdgeLength = 1024;
-			irrMapEdgeLength = 64;
+			irrMapEdgeLength = 32;
 			break;
 
 		case EnvMapQuality::High:
 			envMapEdgeLength = 2048;
-			irrMapEdgeLength = 128;
+			irrMapEdgeLength = 64;
 			break;
 
 		default:

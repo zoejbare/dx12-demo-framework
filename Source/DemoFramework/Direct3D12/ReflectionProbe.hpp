@@ -64,7 +64,7 @@ public:
 
 	bool LoadEnvironmentMap(
 		const Device::Ptr& device,
-		const GraphicsCommandList::Ptr& cmdCtx,
+		const GraphicsCommandList::Ptr& cmdList,
 		const Texture2D::Ptr& envTexture);
 
 	const DescriptorAllocator::Ptr& GetSrvAllocator() const;
