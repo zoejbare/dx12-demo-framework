@@ -236,14 +236,16 @@ void SampleApp::Render()
 		EnvConstData* pConstData = nullptr;
 
 		// Map the buffer to CPU-accessible memory (write-only access) and copy the constant data to it.
-		const HRESULT result = m_envConstBuffer[m_constBufferIndex]->Map(0, &disabledCpuReadRange, reinterpret_cast<void**>(&pConstData));
-		if(SUCCEEDED(result))
-		{
-			memcpy(&pConstData->viewInverse, &m_viewInvMatrix, sizeof(XMMATRIX));
-			memcpy(&pConstData->projInverse, &m_projInvMatrix, sizeof(XMMATRIX));
+		const HRESULT mapEnvConstBufferResult = m_envConstBuffer[m_constBufferIndex]->Map(
+			0,
+			&disabledCpuReadRange,
+			reinterpret_cast<void**>(&pConstData));
+		assert(SUCCEEDED(mapEnvConstBufferResult)); (void) mapEnvConstBufferResult;
 
-			m_envConstBuffer[m_constBufferIndex]->Unmap(0, nullptr);
-		}
+		memcpy(&pConstData->viewInverse, &m_viewInvMatrix, sizeof(XMMATRIX));
+		memcpy(&pConstData->projInverse, &m_projInvMatrix, sizeof(XMMATRIX));
+
+		m_envConstBuffer[m_constBufferIndex]->Unmap(0, nullptr);
 	}
 
 	// Update the scene object const buffer.
@@ -251,14 +253,16 @@ void SampleApp::Render()
 		ObjConstData* pConstData = nullptr;
 
 		// Map the buffer to CPU-accessible memory (write-only access) and copy the constant data to it.
-		const HRESULT result = m_objConstBuffer[m_constBufferIndex]->Map(0, &disabledCpuReadRange, reinterpret_cast<void**>(&pConstData));
-		if(SUCCEEDED(result))
-		{
-			memcpy(&pConstData->worldViewProj, &m_wvpMatrix, sizeof(XMMATRIX));
-			memcpy(&pConstData->world, &m_worldMatrix, sizeof(XMMATRIX));
+		const HRESULT mapObjConstBufferResult = m_objConstBuffer[m_constBufferIndex]->Map(
+			0,
+			&disabledCpuReadRange,
+			reinterpret_cast<void**>(&pConstData));
+		assert(SUCCEEDED(mapObjConstBufferResult)); (void) mapObjConstBufferResult;
 
-			m_objConstBuffer[m_constBufferIndex]->Unmap(0, nullptr);
-		}
+		memcpy(&pConstData->worldViewProj, &m_wvpMatrix, sizeof(XMMATRIX));
+		memcpy(&pConstData->world, &m_worldMatrix, sizeof(XMMATRIX));
+
+		m_objConstBuffer[m_constBufferIndex]->Unmap(0, nullptr);
 	}
 
 	ID3D12DescriptorHeap* const pDescHeaps[] =
@@ -474,22 +478,30 @@ bool SampleApp::prv_loadExternalFiles()
 		return false;
 	}
 
+	const char* const modelFilePath = "models/common/head.obj";
+
 	// Load the object that will be displayed in the center of the environment.
-	m_object = D3D12::WavefrontObj::Load(device, cmdList, "Object", "models/common/head.obj");
+	m_object = D3D12::WavefrontObj::Load(device, cmdList, "Object", modelFilePath);
 	if(!m_object)
 	{
+		LOG_ERROR("Failed to load OBJ file: \"%s\"", modelFilePath);
 		return false;
 	}
 
+	const char* const textureFilePath = "textures/common/pine_attic_2k.hdr";
+
+	// Load the image file that will be used for the environment map.
 	D3D12::Texture2D::Ptr envTexture = D3D12::Texture2D::Load(
 		device,
 		cmdList,
 		descAlloc,
 		D3D12::Texture2D::DataType::Float,
 		D3D12::Texture2D::Channel::RGBA,
-		"textures/common/pine_attic_2k.hdr", 1);
+		textureFilePath,
+		1);
 	if(!envTexture)
 	{
+		LOG_ERROR("Failed to load environment map texture: \"%s\"", textureFilePath);
 		return false;
 	}
 
@@ -497,12 +509,14 @@ bool SampleApp::prv_loadExternalFiles()
 	m_reflectionProbe = D3D12::ReflectionProbe::Create(device, cmdList, descAlloc, D3D12::EnvMapQuality::Mid);
 	if(!m_reflectionProbe)
 	{
+		LOG_ERROR("Failed to create reflection probe");
 		return false;
 	}
 
 	// Attempt to generate the environment map resources from the environment texture.
 	if(!m_reflectionProbe->LoadEnvironmentMap(device, cmdList, envTexture))
 	{
+		LOG_ERROR("Failed to load environment map into reflection probe");
 		return false;
 	}
 
@@ -527,15 +541,20 @@ bool SampleApp::prv_createEnvPipeline()
 	const D3D12::Device::Ptr& device = m_renderBase->GetDevice();
 	const D3D12::DescriptorAllocator::Ptr& descAlloc = m_renderBase->GetCbvSrvUavAllocator();
 
-	D3D12::Blob::Ptr vertexShader = D3D12::LoadShaderFromFile("shaders/env-diffuse/envmap.vs.sbin");
+	const char* const vertexShaderFilePath = "shaders/env-diffuse/envmap.vs.sbin";
+	const char* const pixelShaderFilePath = "shaders/env-diffuse/envmap.ps.sbin";
+
+	D3D12::Blob::Ptr vertexShader = D3D12::LoadShaderFromFile(vertexShaderFilePath);
 	if(!vertexShader)
 	{
+		LOG_ERROR("Failed to load shader: \"%s\"", vertexShaderFilePath);
 		return false;
 	}
 
-	D3D12::Blob::Ptr pixelShader = D3D12::LoadShaderFromFile("shaders/env-diffuse/envmap.ps.sbin");
+	D3D12::Blob::Ptr pixelShader = D3D12::LoadShaderFromFile(pixelShaderFilePath);
 	if(!pixelShader)
 	{
+		LOG_ERROR("Failed to load shader: \"%s\"", pixelShaderFilePath);
 		return false;
 	}
 
@@ -614,6 +633,7 @@ bool SampleApp::prv_createEnvPipeline()
 	m_envRootSig = D3D12::CreateRootSignature(device, rootSigDesc);
 	if(!m_envRootSig)
 	{
+		LOG_ERROR("Failed to create environment map root signature");
 		return false;
 	}
 
@@ -665,6 +685,11 @@ bool SampleApp::prv_createEnvPipeline()
 		D3D12_CONSERVATIVE_RASTERIZATION_MODE_OFF, // D3D12_CONSERVATIVE_RASTERIZATION_MODE ConservativeRaster
 	};
 
+	// IMPORTANT:
+	//  Note that depth testing is enabled here, but it won't write anything to the depth buffer.
+	//  This is so the environment map can be drawn *after* the scene geometry at the back of the
+	//  viewport (enforced by the explicit Z position set in the shader) and draw only to the
+	//  background fragments without overwriting anything important within the scene.
 	constexpr D3D12_DEPTH_STENCIL_DESC depthStencilState =
 	{
 		true,                             // BOOL DepthEnable
@@ -728,6 +753,7 @@ bool SampleApp::prv_createEnvPipeline()
 	m_envPipeline = D3D12::CreatePipelineState(device, pipelineDesc);
 	if(!m_envPipeline)
 	{
+		LOG_ERROR("Failed to create environment map graphics pipeline");
 		return false;
 	}
 
@@ -755,18 +781,20 @@ bool SampleApp::prv_createEnvPipeline()
 			D3D12_RESOURCE_STATE_GENERIC_READ | D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER);
 		if(!m_envVertexBuffer)
 		{
+			LOG_ERROR("Failed to create environment map vertex buffer");
 			return false;
 		}
 
 		volatile EnvMapVertex* pVertexData = nullptr;
 
 		// Map the vertex buffer to CPU-accessible memory so we can write the vertex data into it.
-		const HRESULT mapEnvVertexBuffer = m_envVertexBuffer->Map(
+		const HRESULT mapEnvVertexBufferResult = m_envVertexBuffer->Map(
 			0,
 			&disabledCpuReadRange,
 			reinterpret_cast<void**>(const_cast<EnvMapVertex**>(&pVertexData)));
-		if(FAILED(mapEnvVertexBuffer))
+		if(FAILED(mapEnvVertexBufferResult))
 		{
+			LOG_ERROR("Failed to map environment map vertex buffer for writing; result=0x%08" PRIX32, mapEnvVertexBufferResult);
 			return false;
 		}
 
@@ -816,12 +844,14 @@ bool SampleApp::prv_createEnvPipeline()
 			D3D12_RESOURCE_STATE_GENERIC_READ | D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER);
 		if(!m_envConstBuffer[i])
 		{
+			LOG_ERROR("Failed to create environment map constant buffer [%zu]", i);
 			return false;
 		}
 
 		m_envCbvDesc[i] = descAlloc->Allocate();
 		if(m_envCbvDesc[i].index == D3D12::Descriptor::Invalid.index)
 		{
+			LOG_ERROR("Failed to allocate descriptor for environment map constant buffer [%zu]", i);
 			return false;
 		}
 
@@ -849,15 +879,20 @@ bool SampleApp::prv_createObjPipeline()
 	const D3D12::Device::Ptr& device = m_renderBase->GetDevice();
 	const D3D12::DescriptorAllocator::Ptr& descAlloc = m_renderBase->GetCbvSrvUavAllocator();
 
-	D3D12::Blob::Ptr vertexShader = D3D12::LoadShaderFromFile("shaders/env-diffuse/obj.vs.sbin");
+	const char* const vertexShaderFilePath = "shaders/env-diffuse/obj.vs.sbin";
+	const char* const pixelShaderFilePath = "shaders/env-diffuse/obj.ps.sbin";
+
+	D3D12::Blob::Ptr vertexShader = D3D12::LoadShaderFromFile(vertexShaderFilePath);
 	if(!vertexShader)
 	{
+		LOG_ERROR("Failed to load shader: \"%s\"", vertexShaderFilePath);
 		return false;
 	}
 
-	D3D12::Blob::Ptr pixelShader = D3D12::LoadShaderFromFile("shaders/env-diffuse/obj.ps.sbin");
+	D3D12::Blob::Ptr pixelShader = D3D12::LoadShaderFromFile(pixelShaderFilePath);
 	if(!pixelShader)
 	{
+		LOG_ERROR("Failed to load shader: \"%s\"", pixelShaderFilePath);
 		return false;
 	}
 
@@ -936,6 +971,7 @@ bool SampleApp::prv_createObjPipeline()
 	m_objRootSig = D3D12::CreateRootSignature(device, rootSigDesc);
 	if(!m_objRootSig)
 	{
+		LOG_ERROR("Failed to create scene object root signature");
 		return false;
 	}
 
@@ -1098,6 +1134,7 @@ bool SampleApp::prv_createObjPipeline()
 	m_objPipeline = D3D12::CreatePipelineState(device, pipelineDesc);
 	if(!m_objPipeline)
 	{
+		LOG_ERROR("Failed to create scene object graphics pipeline");
 		return false;
 	}
 
@@ -1128,12 +1165,14 @@ bool SampleApp::prv_createObjPipeline()
 			D3D12_RESOURCE_STATE_GENERIC_READ | D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER);
 		if(!m_objConstBuffer[i])
 		{
+			LOG_ERROR("Failed to create scene object constant buffer [%zu]", i);
 			return false;
 		}
 
 		m_objCbvDesc[i] = descAlloc->Allocate();
 		if(m_objCbvDesc[i].index == D3D12::Descriptor::Invalid.index)
 		{
+			LOG_ERROR("Failed to allocate descriptor for scene object constant buffer [%zu]", i);
 			return false;
 		}
 
