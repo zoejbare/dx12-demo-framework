@@ -21,45 +21,43 @@
 #include "../Application/Log.hpp"
 
 #include <DirectXMath.h>
+#include <tiny_obj_loader.h>
 
 //---------------------------------------------------------------------------------------------------------------------
 
-namespace std
+struct TinyObjIndexHash
 {
-	template <>
-	struct hash<tinyobj::index_t>
+	inline size_t operator()(const tinyobj::index_t& value) const noexcept
 	{
-		inline size_t operator()(const tinyobj::index_t& value) const noexcept
+		constexpr uint32_t fnvOffsetBasis = 0x811C9DC5ul;
+		constexpr uint32_t fnvPrime = 0x01000193ul;
+
+		const uint8_t* const pDataStream = reinterpret_cast<const uint8_t*>(&value);
+
+		uint32_t output = fnvOffsetBasis;
+
+		// Calculate the FNV1a hash of the input value.
+		for(size_t i = 0; i < sizeof(tinyobj::index_t); ++i)
 		{
-			constexpr uint32_t fnvOffsetBasis = 0x811C9DC5ul;
-			constexpr uint32_t fnvPrime = 0x01000193ul;
-
-			const uint8_t* const pDataStream = reinterpret_cast<const uint8_t*>(&value);
-
-			uint32_t output = fnvOffsetBasis;
-
-			// Calculate the FNV1a hash of the input value.
-			for(size_t i = 0; i < sizeof(tinyobj::index_t); ++i)
-			{
-				output ^= pDataStream[i];
-				output *= fnvPrime;
-			}
-
-			return output;
+			output ^= pDataStream[i];
+			output *= fnvPrime;
 		}
-	};
 
-	template<>
-	struct equal_to<tinyobj::index_t>
+		return output;
+	}
+};
+
+//---------------------------------------------------------------------------------------------------------------------
+
+struct TinyObjIndexEqualTo
+{
+	inline bool operator()(const tinyobj::index_t& left, const tinyobj::index_t& right) const noexcept
 	{
-		inline bool operator()(const tinyobj::index_t& left, const tinyobj::index_t& right) const
-		{
-			return (left.vertex_index == right.vertex_index)
-				&& (left.texcoord_index == right.texcoord_index)
-				&& (left.normal_index == right.normal_index);
-		}
-	};
-}
+		return (left.vertex_index == right.vertex_index)
+			&& (left.texcoord_index == right.texcoord_index)
+			&& (left.normal_index == right.normal_index);
+	}
+};
 
 //---------------------------------------------------------------------------------------------------------------------
 
@@ -155,8 +153,8 @@ bool DemoFramework::D3D12::WavefrontObj::_build(
 		std::unordered_map<
 			tinyobj::index_t,
 			uint32_t,
-			std::hash<tinyobj::index_t>,
-			std::equal_to<tinyobj::index_t>
+			TinyObjIndexHash,
+			TinyObjIndexEqualTo
 		> indexLookupTable;
 
 		std::vector<StaticMesh::Geometry::Vertex> vertexBuffer;

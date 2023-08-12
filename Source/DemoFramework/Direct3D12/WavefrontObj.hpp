@@ -21,8 +21,6 @@
 
 #include "Mesh/StaticMesh.hpp"
 
-#include <tiny_obj_loader.h>
-
 #include <memory>
 #include <string>
 #include <unordered_map>
