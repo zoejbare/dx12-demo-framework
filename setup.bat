@@ -50,17 +50,17 @@ mkdir %LOG_DIR%
 if %ERRORLEVEL% NEQ 0 goto create_log_dir_failed
 
 :: Create a new Python virtual environment.
-echo Generating build environment ...
+echo Generating local build environment ...
 %SYS_PYTHON% -m venv _env
 if %ERRORLEVEL% NEQ 0 goto create_env_failed
 
 :: Update Python's base packages.
-echo Updating local Python packages ...
+echo Updating Python packages ...
 %LOCAL_PYTHON% -m pip install -U pip wheel setuptools > %UPDATE_PYTHON_LOG_FILE% 2>&1
 if %ERRORLEVEL% NEQ 0 goto update_python_pkgs_failed
 
 :: Install csbuild to the local Python virtual environment.
-echo Installing csbuild locally ...
+echo Installing csbuild ...
 %LOCAL_PYTHON% -m pip install -e External/csbuild2 > %INSTALL_CSBUILD_LOG_FILE% 2>&1
 if %ERRORLEVEL% NEQ 0 goto install_csbuild_failed
 
