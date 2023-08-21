@@ -30,20 +30,34 @@ RWStructuredBuffer<ShColorCoefficients> shCoefficients : register(u0, space0);
 [numthreads(1, 1, 1)]
 void ComputeMain(uint threadId : SV_DispatchThreadID)
 {
+	// Normalize the final coefficient sums.
 	ShColorCoefficients finalCoeff = shCoefficients[rootConst.index];
 
-	const float normalizationFactor = M_4_PI / shWeights[rootConst.index];
+	// Do the division first for the sake of floating point precision.
+	// This will keep the values in a good range which is especially
+	// necessary for high resolution environment maps since they
+	// generate much larger sums.
+	const float weightSum = shWeights[rootConst.index];
+	finalCoeff.value[0] /= weightSum;
+	finalCoeff.value[1] /= weightSum;
+	finalCoeff.value[2] /= weightSum;
+	finalCoeff.value[3] /= weightSum;
+	finalCoeff.value[4] /= weightSum;
+	finalCoeff.value[5] /= weightSum;
+	finalCoeff.value[6] /= weightSum;
+	finalCoeff.value[7] /= weightSum;
+	finalCoeff.value[8] /= weightSum;
 
-	// Normalize the final coefficient sums.
-	finalCoeff.value[0] *= normalizationFactor;
-	finalCoeff.value[1] *= normalizationFactor;
-	finalCoeff.value[2] *= normalizationFactor;
-	finalCoeff.value[3] *= normalizationFactor;
-	finalCoeff.value[4] *= normalizationFactor;
-	finalCoeff.value[5] *= normalizationFactor;
-	finalCoeff.value[6] *= normalizationFactor;
-	finalCoeff.value[7] *= normalizationFactor;
-	finalCoeff.value[8] *= normalizationFactor;
+	// Apply the inverse probability function.
+	finalCoeff.value[0] *= M_4_PI;
+	finalCoeff.value[1] *= M_4_PI;
+	finalCoeff.value[2] *= M_4_PI;
+	finalCoeff.value[3] *= M_4_PI;
+	finalCoeff.value[4] *= M_4_PI;
+	finalCoeff.value[5] *= M_4_PI;
+	finalCoeff.value[6] *= M_4_PI;
+	finalCoeff.value[7] *= M_4_PI;
+	finalCoeff.value[8] *= M_4_PI;
 
 	shCoefficients[rootConst.index] = finalCoeff;
 }
