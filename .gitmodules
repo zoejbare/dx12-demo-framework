@@ -3,7 +3,7 @@
 	url = https://github.com/zoejbare/MicroIni
 [submodule "External/csbuild2"]
 	path = External/csbuild2
-	url = https://github.com/SleepingCatGames/csbuild2.git
+	url = https://github.com/zoejbare/csbuild2.git
 [submodule "External/imgui"]
 	path = External/imgui
 	url = https://github.com/ocornut/imgui.git
