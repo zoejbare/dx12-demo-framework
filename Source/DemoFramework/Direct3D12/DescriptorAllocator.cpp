@@ -163,20 +163,21 @@ DemoFramework::D3D12::Descriptor DemoFramework::D3D12::DescriptorAllocator::Allo
 void DemoFramework::D3D12::DescriptorAllocator::_internalFree(const uint32_t index)
 {
 	// Make sure the descriptor index is within the bounds of the heap.
-	if(index < m_totalLength)
+	if(index < m_totalLength && index < m_tailIndex && !m_pFreeList->list.count(index))
 	{
-		if(index == m_tailIndex)
-		{
-			// The descriptor being freed is at the end of the list, so we don't need to deal with the free list.
-			--m_currentLength;
-			--m_tailIndex;
-		}
-		else if(index < m_currentLength && !m_pFreeList->list.count(index))
+		--m_currentLength;
+
+		if(m_currentLength > 0)
 		{
 			// Insert the descriptor index into the free list when it's not already there.
 			m_pFreeList->list.insert(index);
+		}
+		else
+		{
+			// Once all descriptors have been freed, the allocator can be reset.
+			m_pFreeList->list.clear();
 
-			--m_currentLength;
+			m_tailIndex = 0;
 		}
 	}
 }
